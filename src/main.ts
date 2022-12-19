@@ -9,14 +9,15 @@ import {
 
 generateCameraOption()
 
-let roomId = 1
 let client: Client
 let localStream: LocalStream
+let roomId = 1
+let userId = 'user1'
 document.getElementById('startCall')!.onclick = async function () {
   roomId =
     roomId ??
     parseInt(document.querySelector<HTMLInputElement>('#roomId')!.value)
-  const userId = document.querySelector<HTMLInputElement>('#userId')!.value
+  userId = document.querySelector<HTMLInputElement>('#userId')!.value || userId
   const { sdkAppId, userSig } = genTestUserSig(userId)
   client = TRTC.createClient({ mode: 'rtc', sdkAppId, userId, userSig })
   client.on('stream-added', (event) => {

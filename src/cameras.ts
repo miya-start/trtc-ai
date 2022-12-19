@@ -11,7 +11,6 @@ export function generateCameraOption() {
   cameraSelect = document.getElementById('cameraSelect') as HTMLSelectElement
   cameraSelect.innerHTML = ''
   TRTC.getCameras().then((devices) => {
-    deviceId = devices[0].deviceId
     devices.forEach((dev) => {
       const option = document.createElement('option')
       option.value = dev.deviceId
@@ -26,9 +25,11 @@ export function generateCameraOption() {
 function switchDevice() {
   localStream.switchDevice('video', deviceId)
 }
-export function switchCamera(localStream: LocalStream) {
-  localStream = localStream
-  localStream.switchDevice('video', deviceId)
+export function switchCamera(ilocalStream: LocalStream) {
+  localStream = ilocalStream
+  if (deviceId) {
+    switchDevice()
+  }
   cameraSelect.addEventListener('change', switchDevice, { passive: true })
 }
 
