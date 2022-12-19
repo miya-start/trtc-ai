@@ -7,7 +7,26 @@
     <title>Vite + TS</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div class="container">
+      <input
+        type="number"
+        id="roomId"
+        name="roomId"
+        placeholder="roomId"
+        required
+      />
+      <input
+        type="text"
+        id="userId"
+        name="userId"
+        placeholder="userId"
+        required
+      />
+      <button type="button" id="startCall">start call</button>
+      <button type="button" id="finishCall">finish call</button>
+    </div>
+    <div id="localStreamContainer"></div>
+    <div id="remoteStreamContainer"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
