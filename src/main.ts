@@ -1,18 +1,16 @@
 import './style.css'
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
-
-const sdkAppId = import.meta.env.VITE_SDKAPPID | 0
-const userSig = import.meta.env.VITE_USERSIG
+import { genTestUserSig } from './debug/GenerateTestUserSig'
 
 let roomId = 1
-let userId = '1'
 let client: Client
 let localStream: LocalStream
 document.getElementById('startCall')!.onclick = async function () {
   roomId =
     roomId ??
     parseInt(document.querySelector<HTMLInputElement>('#roomId')!.value)
-  userId = userId ?? document.querySelector<HTMLInputElement>('#userId')!.value
+  const userId = document.querySelector<HTMLInputElement>('#userId')!.value
+  const { sdkAppId, userSig } = genTestUserSig(userId)
   client = TRTC.createClient({ mode: 'rtc', sdkAppId, userId, userSig })
   client.on('stream-added', (event) => {
     const remoteStream = event.stream
