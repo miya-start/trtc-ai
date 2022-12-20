@@ -1,4 +1,4 @@
-import './style.css'
+import { io } from 'socket.io-client'
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
 import {
   generateCameraOption,
@@ -6,11 +6,7 @@ import {
   switchCamera,
 } from './cameras'
 import { genTestUserSig } from './debug/GenerateTestUserSig'
-import { getData } from './store'
-
-getData('/api/test').then((data) => {
-  console.log(data)
-})
+import './style.css'
 
 generateCameraOption()
 
@@ -53,3 +49,8 @@ document.getElementById('finishCall')!.onclick = async function () {
   client.destroy()
   removeCameraListener()
 }
+
+const socket = io()
+socket.on('connect', () => {
+  console.log('connected')
+})

@@ -13,6 +13,7 @@
     "vite": "^4.0.0"
   },
   "dependencies": {
+    "socket.io-client": "^4.5.4",
     "trtc-js-sdk": "^4.15.1"
   }
 }
