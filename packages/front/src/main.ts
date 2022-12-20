@@ -1,11 +1,16 @@
 import './style.css'
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
-import { genTestUserSig } from './debug/GenerateTestUserSig'
 import {
   generateCameraOption,
   removeCameraListener,
   switchCamera,
 } from './cameras'
+import { genTestUserSig } from './debug/GenerateTestUserSig'
+import { getData } from './store'
+
+getData('/api/test').then((data) => {
+  console.log(data)
+})
 
 generateCameraOption()
 

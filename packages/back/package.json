@@ -5,8 +5,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "swc ./src -w -d build && nodemon ./build/index.js",
-    "build": "swc ./src -d build"
+    "build": "swc ./src -d dist",
+    "dev": "nodemon ./dist/index.js",
+    "swc": "swc ./src -w -d dist"
   },
   "repository": {
     "type": "git",
