@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*eslint-disable*/
 
 const LibGenerateTestUserSig = (function (e, t) {

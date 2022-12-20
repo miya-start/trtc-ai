@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /* eslint-disable require-jsdoc */
 /*
  * Module:   GenerateTestUserSig
