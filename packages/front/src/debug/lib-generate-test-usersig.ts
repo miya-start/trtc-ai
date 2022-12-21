@@ -5430,9 +5430,10 @@ const LibGenerateTestUserSig = (function (e, t) {
         (r = new TypeError('Invalid non-string/buffer chunk'))
       return r
     })(t, r)
-    if (o) e.emit('error', o)
-    else if (null === r)
-      (t.reading = !1),
+    if (o) {
+      e.emit('error', o)
+    } else if (null === r) {
+      ;(t.reading = !1),
         (function (e, t) {
           if (t.ended) return
           if (t.decoder) {
@@ -5443,7 +5444,7 @@ const LibGenerateTestUserSig = (function (e, t) {
           }
           ;(t.ended = !0), ft(e)
         })(e, t)
-    else if (t.objectMode || (r && r.length > 0))
+    } else if (t.objectMode || (r && r.length > 0)) {
       if (t.ended && !i) {
         var a = new Error('stream.push() after EOF')
         e.emit('error', a)
@@ -5451,7 +5452,7 @@ const LibGenerateTestUserSig = (function (e, t) {
         var s = new Error('stream.unshift() after end event')
         e.emit('error', s)
       } else {
-        var h
+        var h;
         !t.decoder ||
           i ||
           n ||
@@ -5467,7 +5468,9 @@ const LibGenerateTestUserSig = (function (e, t) {
             t.readingMore || ((t.readingMore = !0), de(ct, e, t))
           })(e, t)
       }
-    else i || (t.reading = !1)
+    } else {
+      i || (t.reading = !1)
+    }
     return (function (e) {
       return (
         !e.ended &&
