@@ -58,9 +58,9 @@ export const Setting: React.FC<{
             setDeviceId(event.target.value)
           }
         >
-          {cameras.map((device) => (
-            <option value={device.deviceId} key={device.deviceId}>
-              {device.label}
+          {cameras.map(({ deviceId, label }) => (
+            <option value={deviceId} key={deviceId}>
+              {label}
             </option>
           ))}
         </select>

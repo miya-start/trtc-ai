@@ -60,8 +60,16 @@ const App: React.FC = () => {
   const handleSocket = () => {
     const isocket = io()
     setSocket(isocket)
+
     isocket.on('connect', () => {
       console.log('connected')
+    })
+    isocket.on('disconnect', () => {
+      console.log('disconnected')
+    })
+
+    isocket.on('receive-message', (data) => {
+      console.log('receive-message', data)
     })
   }
 
@@ -85,7 +93,17 @@ const App: React.FC = () => {
     if (localStream && deviceId) {
       localStream.switchDevice('video', deviceId)
     }
-  }, [localStream, deviceId])
+  }, [localStream?.hasVideo, deviceId])
+
+  useEffect(() => {
+    if (socket?.connected) {
+      socket.emit('join-room', `${roomId}`)
+      socket.emit('send-message', {
+        userId,
+        text: 'hello world',
+      })
+    }
+  }, [socket?.connected])
 
   return (
     <>
