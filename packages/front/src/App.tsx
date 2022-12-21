@@ -18,7 +18,7 @@ const App: React.FC = () => {
     setLocalStream(ilocalStream)
   }
 
-  const startCall = async () => {
+  const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
     const iclient = TRTC.createClient({
       mode: 'rtc',
@@ -51,12 +51,19 @@ const App: React.FC = () => {
     } catch (error) {
       console.error(error)
     }
+  }
 
+  const handleSocket = () => {
     const isocket = io()
     setSocket(isocket)
     isocket.on('connect', () => {
       console.log('connected')
     })
+  }
+
+  const startCall = async () => {
+    handleTRTC()
+    handleSocket()
   }
 
   const finishCall = async () => {
@@ -111,28 +118,22 @@ const App: React.FC = () => {
           <select
             id="cameraSelect"
             ref={cameraSelect}
-            onChange={(event: React.ChangeEvent) => {
-              setDeviceId((event.target as HTMLSelectElement).value)
-            }}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              setDeviceId(event.target.value)
+            }
           >
-            {cameras.map((camera) => {
-              return (
-                <option value={camera.deviceId} key={camera.deviceId}>
-                  {camera.label}
-                </option>
-              )
-            })}
+            {cameras.map((device) => (
+              <option value={device.deviceId} key={device.deviceId}>
+                {device.label}
+              </option>
+            ))}
           </select>
         </div>
-        <button id="startCall" onClick={startCall}>
-          Start Call
-        </button>
-        <button id="finishCall" onClick={finishCall}>
-          Finish Call
-        </button>
+        <button onClick={startCall}>Start Call</button>
+        <button onClick={finishCall}>Finish Call</button>
       </div>
-      <div id="localStreamContainer"></div>
-      <div id="remoteStreamContainer"></div>
+      <div id="localStreamContainer" />
+      <div id="remoteStreamContainer" />
     </>
   )
 }
