@@ -1,11 +1,20 @@
-import { useEffect, useState, useRef, ChangeEvent } from 'react'
+import { useEffect, useState } from 'react'
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
-import { genTestUserSig } from './debug/GenerateTestUserSig'
+import { genTestUserSig } from '../debug/GenerateTestUserSig'
 import { io, Socket } from 'socket.io-client'
-import './style.css'
+import { Setting } from './Setting'
+import '../style.css'
+
+const Stream: React.FC = () => {
+  return (
+    <>
+      <div id="localStreamContainer" />
+      <div id="remoteStreamContainer" />
+    </>
+  )
+}
 
 const App: React.FC = () => {
-  const cameraSelect = useRef<HTMLSelectElement>(null)
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
@@ -13,10 +22,6 @@ const App: React.FC = () => {
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [userId, setUserId] = useState('user1')
-
-  const switchCamera = (ilocalStream: LocalStream) => {
-    setLocalStream(ilocalStream)
-  }
 
   const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
@@ -47,7 +52,7 @@ const App: React.FC = () => {
       await localStream.initialize()
       localStream.play('localStreamContainer')
       await iclient.publish(localStream)
-      switchCamera(localStream)
+      setLocalStream(localStream)
     } catch (error) {
       console.error(error)
     }
@@ -91,49 +96,17 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div className="container">
-        <div>
-          <label htmlFor="roomId">Room ID:</label>
-          <input
-            type="number"
-            id="roomId"
-            value={roomId}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setRoomId(parseInt(e.target.value))
-            }
-          />
-        </div>
-
-        <label htmlFor="userId">User ID:</label>
-        <input
-          type="text"
-          id="userId"
-          value={userId}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setUserId(e.target.value)
-          }
-        />
-        <div>
-          <label htmlFor="cameraSelect">Camera:</label>
-          <select
-            id="cameraSelect"
-            ref={cameraSelect}
-            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-              setDeviceId(event.target.value)
-            }
-          >
-            {cameras.map((device) => (
-              <option value={device.deviceId} key={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button onClick={startCall}>Start Call</button>
-        <button onClick={finishCall}>Finish Call</button>
-      </div>
-      <div id="localStreamContainer" />
-      <div id="remoteStreamContainer" />
+      <Setting
+        roomId={roomId}
+        userId={userId}
+        setRoomId={setRoomId}
+        setUserId={setUserId}
+        setDeviceId={setDeviceId}
+        cameras={cameras}
+        startCall={startCall}
+        finishCall={finishCall}
+      />
+      <Stream />
     </>
   )
 }
