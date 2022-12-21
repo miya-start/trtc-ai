@@ -1,4 +1,5 @@
-import { ChangeEvent } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
+import TRTC from 'trtc-js-sdk'
 
 export const Setting: React.FC<{
   roomId: number
@@ -6,7 +7,6 @@ export const Setting: React.FC<{
   setRoomId: (roomId: number) => void
   setUserId: (userId: string) => void
   setDeviceId: (deviceId: string) => void
-  cameras: MediaDeviceInfo[]
   startCall: () => void
   finishCall: () => void
 }> = ({
@@ -15,10 +15,17 @@ export const Setting: React.FC<{
   setRoomId,
   setUserId,
   setDeviceId,
-  cameras,
   startCall,
   finishCall,
 }) => {
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
+
+  useEffect(() => {
+    TRTC.getCameras().then((devices) => {
+      setCameras(devices)
+    })
+  }, [])
+
   return (
     <div className="container">
       <div>

@@ -15,7 +15,6 @@ const Stream: React.FC = () => {
 }
 
 const App: React.FC = () => {
-  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
@@ -83,12 +82,6 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    TRTC.getCameras().then((devices) => {
-      setCameras(devices)
-    })
-  }, [])
-
-  useEffect(() => {
     if (localStream && deviceId) {
       localStream.switchDevice('video', deviceId)
     }
@@ -102,7 +95,6 @@ const App: React.FC = () => {
         setRoomId={setRoomId}
         setUserId={setUserId}
         setDeviceId={setDeviceId}
-        cameras={cameras}
         startCall={startCall}
         finishCall={finishCall}
       />
