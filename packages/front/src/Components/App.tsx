@@ -1,4 +1,8 @@
+import 'regenerator-runtime' // for the bug of react-speech-recognition
 import { useEffect, useState } from 'react'
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from 'react-speech-recognition'
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
 import { genTestUserSig } from '../debug/GenerateTestUserSig'
 import { io, Socket } from 'socket.io-client'
@@ -14,6 +18,22 @@ const Stream: React.FC = () => {
   )
 }
 
+type Transcripts = { time: number; transcript: string }[]
+
+const Captions: React.FC<{ transcripts: Transcripts }> = ({
+  transcripts: captions,
+}) => {
+  return (
+    <div>
+      {captions
+        .filter(({ transcript }) => transcript)
+        .map(({ time, transcript }) => (
+          <div key={time}>{transcript}</div>
+        ))}
+    </div>
+  )
+}
+
 const App: React.FC = () => {
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
@@ -21,6 +41,9 @@ const App: React.FC = () => {
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [userId, setUserId] = useState('user1')
+  const [transcripts, setTranscripts] = useState<Transcripts>([])
+  const { browserSupportsSpeechRecognition, listening, transcript } =
+    useSpeechRecognition()
 
   const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
@@ -73,9 +96,17 @@ const App: React.FC = () => {
     })
   }
 
+  const handleSpeechRecognition = () => {
+    if (!browserSupportsSpeechRecognition) {
+      throw Error('browser does not support speech recognition')
+    }
+    SpeechRecognition.startListening()
+  }
+
   const startCall = async () => {
     handleTRTC()
     handleSocket()
+    handleSpeechRecognition()
   }
 
   const finishCall = async () => {
@@ -87,6 +118,7 @@ const App: React.FC = () => {
     await client.leave()
     client.destroy()
     socket.disconnect()
+    SpeechRecognition.stopListening()
   }
 
   useEffect(() => {
@@ -105,6 +137,29 @@ const App: React.FC = () => {
     }
   }, [socket?.connected])
 
+  useEffect(() => {
+    if (!localStream?.hasVideo) return
+    if (transcript) {
+      setTranscripts((prev) => [
+        ...prev.slice(0, -1),
+        { time: Date.now(), transcript },
+      ])
+    } else if (!transcript) {
+      setTranscripts((prev) => [...prev, { time: Date.now(), transcript }])
+    }
+    SpeechRecognition.startListening()
+  }, [listening, localStream?.hasVideo, transcript])
+
+  useEffect(() => {
+    const TIME = 2000
+    const timeoutId = setTimeout(() => {
+      if (transcripts.length === 0) return
+      const now = Date.now()
+      setTranscripts((prev) => prev.filter(({ time }) => now - time < TIME))
+    }, TIME)
+    return () => clearTimeout(timeoutId)
+  }, [transcripts.length])
+
   return (
     <>
       <Setting
@@ -117,6 +172,7 @@ const App: React.FC = () => {
         finishCall={finishCall}
       />
       <Stream />
+      <Captions transcripts={transcripts} />
     </>
   )
 }
