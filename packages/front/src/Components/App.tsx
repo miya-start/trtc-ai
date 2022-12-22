@@ -32,6 +32,16 @@ const Captions: React.FC<{ transcripts: Transcripts }> = ({
   )
 }
 
+type Message = {
+  isTranscriptEnded: boolean
+  transcript: string
+  time: number
+  userId: string
+}
+function sendMessage(socket: Socket, message: Omit<Message, 'time'>) {
+  socket.emit('send-message', { ...message, time: Date.now() })
+}
+
 const App: React.FC = () => {
   const { browserSupportsSpeechRecognition, listening, transcript } =
     useSpeechRecognition()
@@ -131,10 +141,19 @@ const App: React.FC = () => {
       socket.emit('join-room', `${roomId}`)
       socket.emit('send-message', {
         userId,
-        text: 'hello world',
+        transcript: 'hello world',
       })
     }
   }, [socket?.connected])
+
+  useEffect(() => {
+    if (!socket?.connected || !listening || !transcript) return
+    sendMessage(socket, {
+      userId,
+      transcript,
+      isTranscriptEnded,
+    })
+  }, [listening, socket?.connected, transcript])
 
   useEffect(() => {
     if (!localStream?.hasVideo) return

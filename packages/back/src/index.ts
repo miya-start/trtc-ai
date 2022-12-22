@@ -2,6 +2,13 @@ import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 
+type Message = {
+  isTranscriptEnded: boolean
+  transcript: string
+  time: number
+  userId: string
+}
+
 const app = express()
 const httpServer = createServer(app)
 const io = new Server(httpServer)
@@ -19,8 +26,8 @@ io.on('connection', (socket) => {
     roomId = iroomId
   })
 
-  socket.on('send-message', (message: { userId: string; text: string }) => {
-    console.log(`send-message ${socket.id} ${message.text}`)
+  socket.on('send-message', (message: Message) => {
+    console.log(`send-message ${socket.id} ${message.transcript}`)
     socket.to(roomId).emit('receive-message', message)
   })
 
