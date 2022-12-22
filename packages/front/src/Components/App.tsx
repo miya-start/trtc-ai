@@ -25,25 +25,24 @@ const Captions: React.FC<{ transcripts: Transcripts }> = ({
 }) => {
   return (
     <div>
-      {captions
-        .filter(({ transcript }) => transcript)
-        .map(({ time, transcript }) => (
-          <div key={time}>{transcript}</div>
-        ))}
+      {captions.map(({ time, transcript }) => (
+        <div key={time}>{transcript}</div>
+      ))}
     </div>
   )
 }
 
 const App: React.FC = () => {
+  const { browserSupportsSpeechRecognition, listening, transcript } =
+    useSpeechRecognition()
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
+  const [isTranscriptEnded, setIsTranscriptEnded] = useState(false)
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
-  const [userId, setUserId] = useState('user1')
   const [transcripts, setTranscripts] = useState<Transcripts>([])
-  const { browserSupportsSpeechRecognition, listening, transcript } =
-    useSpeechRecognition()
+  const [userId, setUserId] = useState('user1')
 
   const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
@@ -139,16 +138,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!localStream?.hasVideo) return
-    if (transcript) {
+    if (listening && isTranscriptEnded && transcript) {
+      setTranscripts((prev) => [...prev, { time: Date.now(), transcript }])
+      setIsTranscriptEnded(false)
+    } else if (listening && !isTranscriptEnded) {
       setTranscripts((prev) => [
         ...prev.slice(0, -1),
         { time: Date.now(), transcript },
       ])
-    } else if (!transcript) {
-      setTranscripts((prev) => [...prev, { time: Date.now(), transcript }])
+    } else if (!listening && !isTranscriptEnded) {
+      setIsTranscriptEnded(true)
     }
     SpeechRecognition.startListening()
-  }, [listening, localStream?.hasVideo, transcript])
+  }, [isTranscriptEnded, listening, localStream?.hasVideo, transcript])
 
   useEffect(() => {
     const TIME = 2000
