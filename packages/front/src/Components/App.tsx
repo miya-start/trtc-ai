@@ -6,8 +6,10 @@ import SpeechRecognition, {
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
 import { genTestUserSig } from '../debug/GenerateTestUserSig'
 import { io, Socket } from 'socket.io-client'
-import { Setting } from './Setting'
+import { Languages, Setting } from './Setting'
 import '../style.css'
+
+type Transcripts = { time: number; transcript: string }[]
 
 const Stream: React.FC = () => {
   return (
@@ -17,8 +19,6 @@ const Stream: React.FC = () => {
     </>
   )
 }
-
-type Transcripts = { time: number; transcript: string }[]
 
 const Captions: React.FC<{ transcripts: Transcripts }> = ({
   transcripts: captions,
@@ -34,6 +34,7 @@ const Captions: React.FC<{ transcripts: Transcripts }> = ({
 
 type Message = {
   isTranscriptEnded: boolean
+  language: Languages[number]['value']
   transcript: string
   time: number
   userId: string
@@ -43,11 +44,16 @@ function sendMessage(socket: Socket, message: Omit<Message, 'time'>) {
 }
 
 const App: React.FC = () => {
-  const { browserSupportsSpeechRecognition, listening, transcript } =
-    useSpeechRecognition()
+  const {
+    browserSupportsSpeechRecognition,
+    finalTranscript,
+    listening,
+    transcript,
+  } = useSpeechRecognition()
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
   const [isTranscriptEnded, setIsTranscriptEnded] = useState(false)
+  const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
@@ -139,21 +145,19 @@ const App: React.FC = () => {
   useEffect(() => {
     if (socket?.connected) {
       socket.emit('join-room', `${roomId}`)
-      socket.emit('send-message', {
-        userId,
-        transcript: 'hello world',
-      })
+      socket.emit('send-language', language)
     }
   }, [socket?.connected])
 
   useEffect(() => {
-    if (!socket?.connected || !listening || !transcript) return
+    if (!finalTranscript || !socket?.connected || !transcript) return
     sendMessage(socket, {
-      userId,
-      transcript,
       isTranscriptEnded,
+      language,
+      transcript,
+      userId,
     })
-  }, [listening, socket?.connected, transcript])
+  }, [finalTranscript, isTranscriptEnded, socket?.connected, transcript])
 
   useEffect(() => {
     if (!localStream?.hasVideo) return
@@ -186,6 +190,7 @@ const App: React.FC = () => {
       <Setting
         roomId={roomId}
         userId={userId}
+        setLanguage={setLanguage}
         setRoomId={setRoomId}
         setUserId={setUserId}
         setDeviceId={setDeviceId}

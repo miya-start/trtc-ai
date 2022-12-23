@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import express from 'express'
 import { Server } from 'socket.io'
 import tencentcloud from 'tencentcloud-sdk-nodejs-tmt'
+import { TextTranslateResponse } from 'tencentcloud-sdk-nodejs-tmt/tencentcloud/services/tmt/v20180321/tmt_models'
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
@@ -23,13 +24,7 @@ const clientConfig = {
   },
 }
 const client = new TmtClient(clientConfig)
-const params = {
-  SourceText: '今日は良い天気ですね',
-  Source: 'auto',
-  Target: 'en',
-  ProjectId: 0,
-}
-client.TextTranslate(params).then(
+textTranslate('子', 'en').then(
   (data) => {
     console.log(data)
   },
@@ -38,8 +33,25 @@ client.TextTranslate(params).then(
   }
 )
 
+type Languages = 'en' | 'ja'
+
+function textTranslate(
+  text: string,
+  target: Languages
+): Promise<TextTranslateResponse> {
+  const params = {
+    SourceText: text,
+    Source: 'auto',
+    Target: target,
+    ProjectId: 0,
+  }
+
+  return client.TextTranslate(params)
+}
+
 type Message = {
   isTranscriptEnded: boolean
+  language: Languages
   transcript: string
   time: number
   userId: string
@@ -53,6 +65,7 @@ app.get('/', (_, res) => {
   res.send('Hello World!')
 })
 
+const languages: Set<Languages> = new Set()
 io.on('connection', (socket) => {
   let roomId = '0'
   console.log(`connect ${socket.id}`)
@@ -62,9 +75,33 @@ io.on('connection', (socket) => {
     roomId = iroomId
   })
 
-  socket.on('send-message', (message: Message) => {
+  socket.on('send-language', (language: Languages) => {
+    languages.add(language)
+    console.log(`send-language ${socket.id} ${language}`)
+  })
+
+  socket.on('send-message', async (message: Message) => {
     console.log(`send-message ${socket.id} ${message.transcript}`)
-    socket.to(roomId).emit('receive-message', message)
+    console.log('languages', languages)
+
+    const responsePromises = [...languages]
+      .filter((language) => language !== message.language)
+      .map((language) =>
+        textTranslate(message.transcript, language).catch((err) =>
+          console.error('error', err)
+        )
+      )
+    const responses = await Promise.all(responsePromises)
+
+    socket.to(roomId).emit('receive-message', {
+      ...message,
+      tranlates: responses
+        .flatMap((response) => (response == null ? [] : [response]))
+        .map((textTranslateResponse) => ({
+          language: textTranslateResponse.Target,
+          text: textTranslateResponse.TargetText,
+        })),
+    })
   })
 
   socket.on('disconnect', () => {
