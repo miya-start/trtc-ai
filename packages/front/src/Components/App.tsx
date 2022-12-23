@@ -1,11 +1,11 @@
 import 'regenerator-runtime' // for the bug of react-speech-recognition
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import SpeechRecognition, {
   useSpeechRecognition,
 } from 'react-speech-recognition'
+import { io, Socket } from 'socket.io-client'
 import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
 import { genTestUserSig } from '../debug/GenerateTestUserSig'
-import { io, Socket } from 'socket.io-client'
 import { Languages, Setting } from './Setting'
 import '../style.css'
 
@@ -43,6 +43,7 @@ function sendMessage(socket: Socket, message: Omit<Message, 'time'>) {
   socket.emit('send-message', { ...message, time: Date.now() })
 }
 
+const DELETION_INTERVAL = 2000
 const App: React.FC = () => {
   const {
     browserSupportsSpeechRecognition,
@@ -59,6 +60,7 @@ const App: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null)
   const [transcripts, setTranscripts] = useState<Transcripts>([])
   const [userId, setUserId] = useState('user1')
+  const transcriptWordsLength = useRef(0)
 
   const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
@@ -150,14 +152,36 @@ const App: React.FC = () => {
   }, [socket?.connected])
 
   useEffect(() => {
-    if (!finalTranscript || !socket?.connected || !transcript) return
+    if (!socket?.connected) return
+    if (!transcript) {
+      transcriptWordsLength.current = 0
+      return
+    }
+    const length = transcript.split(' ').length
+    if (length === transcriptWordsLength.current && !finalTranscript) {
+      return
+    }
+    transcriptWordsLength.current = length
+
+    console.log('transcript', transcript)
+    console.log('transcriptReplaced', transcript.replace(/\s\S*$/, ''))
+    console.log('finalTranscript', finalTranscript)
+
     sendMessage(socket, {
       isTranscriptEnded,
       language,
-      transcript,
+      transcript: finalTranscript
+        ? finalTranscript
+        : transcript.replace(/\s\S*$/, ''),
       userId,
     })
-  }, [finalTranscript, isTranscriptEnded, socket?.connected, transcript])
+  }, [
+    finalTranscript,
+    isTranscriptEnded,
+    socket?.connected,
+    transcript,
+    transcriptWordsLength.current,
+  ])
 
   useEffect(() => {
     if (!localStream?.hasVideo) return
@@ -176,12 +200,13 @@ const App: React.FC = () => {
   }, [isTranscriptEnded, listening, localStream?.hasVideo, transcript])
 
   useEffect(() => {
-    const TIME = 2000
     const timeoutId = setTimeout(() => {
       if (transcripts.length === 0) return
       const now = Date.now()
-      setTranscripts((prev) => prev.filter(({ time }) => now - time < TIME))
-    }, TIME)
+      setTranscripts((prev) =>
+        prev.filter(({ time }) => now - time < DELETION_INTERVAL)
+      )
+    }, DELETION_INTERVAL)
     return () => clearTimeout(timeoutId)
   }, [transcripts.length])
 
