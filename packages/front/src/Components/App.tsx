@@ -162,6 +162,7 @@ const App: React.FC = () => {
       return
     }
     transcriptWordsLength.current = length
+    if (length === 1 && !finalTranscript) return
 
     console.log('transcript', transcript)
     console.log('transcriptReplaced', transcript.replace(/\s\S*$/, ''))
@@ -208,7 +209,7 @@ const App: React.FC = () => {
       )
     }, DELETION_INTERVAL)
     return () => clearTimeout(timeoutId)
-  }, [transcripts.length])
+  }, [transcript, transcripts.length])
 
   return (
     <>
