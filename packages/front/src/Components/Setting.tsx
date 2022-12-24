@@ -14,7 +14,8 @@ export const Setting: React.FC<{
   setLanguage: (languageKey: Languages[number]['value']) => void
   setRoomId: (roomId: number) => void
   setUserId: (userId: string) => void
-  setDeviceId: (deviceId: string) => void
+  setCameraId: (cameraId: string) => void
+  setMicrophoneId: (microphoneId: string) => void
   startCall: () => void
   finishCall: () => void
 }> = ({
@@ -23,11 +24,13 @@ export const Setting: React.FC<{
   setLanguage,
   setRoomId,
   setUserId,
-  setDeviceId,
+  setCameraId,
+  setMicrophoneId,
   startCall,
   finishCall,
 }) => {
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
+  const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([])
 
   useEffect(() => {
     TRTC.getCameras().then((devices) => {
@@ -35,10 +38,16 @@ export const Setting: React.FC<{
     })
   }, [])
 
+  useEffect(() => {
+    TRTC.getMicrophones().then((devices) => {
+      setMicrophones(devices)
+    })
+  }, [])
+
   return (
     <div className="container">
       <div>
-        <label htmlFor="roomId">Room ID:</label>
+        <label htmlFor="roomId">Room Number:</label>
         <input
           type="text"
           id="roomId"
@@ -49,7 +58,7 @@ export const Setting: React.FC<{
         />
       </div>
       <div>
-        <label htmlFor="userId">User ID:</label>
+        <label htmlFor="userId">User Name:</label>
         <input
           type="text"
           id="userId"
@@ -80,10 +89,25 @@ export const Setting: React.FC<{
         <select
           id="cameraSelect"
           onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-            setDeviceId(event.target.value)
+            setCameraId(event.target.value)
           }
         >
           {cameras.map(({ deviceId, label }) => (
+            <option value={deviceId} key={deviceId}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="microphoneSelect">Microphone:</label>
+        <select
+          id="microphoneSelect"
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            setMicrophoneId(event.target.value)
+          }
+        >
+          {microphones.map(({ deviceId, label }) => (
             <option value={deviceId} key={deviceId}>
               {label}
             </option>

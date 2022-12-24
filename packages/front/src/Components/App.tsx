@@ -80,7 +80,8 @@ const App: React.FC = () => {
   } = useSpeechRecognition()
   const [captionTexts, setCaptionTexts] = useState<CaptionText[]>([])
   const [client, setClient] = useState<Client | null>(null)
-  const [deviceId, setDeviceId] = useState<string | null>(null)
+  const [cameraId, setCameraId] = useState<string | null>(null)
+  const [microphoneId, setMicrophoneId] = useState<string | null>(null)
   const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
@@ -173,10 +174,16 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    if (localStream?.hasVideo() && deviceId) {
-      localStream.switchDevice('video', deviceId)
+    if (localStream?.hasVideo() && cameraId) {
+      localStream.switchDevice('video', cameraId)
     }
-  }, [localStream, deviceId])
+  }, [localStream, cameraId])
+
+  useEffect(() => {
+    if (localStream?.hasAudio() && microphoneId) {
+      localStream.switchDevice('audio', microphoneId)
+    }
+  }, [localStream, microphoneId])
 
   useEffect(() => {
     if (socket?.connected) {
@@ -213,13 +220,13 @@ const App: React.FC = () => {
     }
 
     sendMessage(socket, {
-      isTranscriptEnded: isTranscriptEndedRef.current,
-      language,
+      ...caption,
       transcript: finalTranscript
         ? finalTranscript
         : transcript.replace(/\s\S*$/, ''),
-      userId,
     })
+
+    console.log('transcript', transcript)
 
     if (finalTranscript) {
       isTranscriptEndedRef.current = true
@@ -252,7 +259,8 @@ const App: React.FC = () => {
         setLanguage={setLanguage}
         setRoomId={setRoomId}
         setUserId={setUserId}
-        setDeviceId={setDeviceId}
+        setCameraId={setCameraId}
+        setMicrophoneId={setMicrophoneId}
         startCall={startCall}
         finishCall={finishCall}
       />
