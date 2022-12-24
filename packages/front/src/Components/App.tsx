@@ -7,6 +7,7 @@ import { io, type Socket } from 'socket.io-client'
 import TRTC, { type Client, type LocalStream } from 'trtc-js-sdk'
 import { genTestUserSig } from '../debug/GenerateTestUserSig'
 import { Captions } from './Caption'
+import { Controls } from './Controls'
 import { Setting } from './Setting'
 import { Stream } from './Stream'
 import {
@@ -21,7 +22,7 @@ function insertCaption(
   prevs: CaptionText[],
   next: CaptionText,
   userId: string
-) {
+): CaptionText[] {
   const index = prevs.findLastIndex((prev) => {
     return prev.userId === userId
   })
@@ -29,8 +30,17 @@ function insertCaption(
   return [...prevs.slice(0, index), next, ...prevs.slice(index + 1)]
 }
 
-function sendMessage(socket: Socket, message: Omit<MessageToSend, 'time'>) {
-  socket.emit('send-message', { ...message, time: Date.now() })
+function sendMessage(socket: Socket, message: MessageToSend): void {
+  socket.emit('send-message', message)
+}
+
+function startSpeechRecognition(
+  browserSupportsSpeechRecognition: boolean
+): void {
+  if (!browserSupportsSpeechRecognition) {
+    throw Error('browser does not support speech recognition')
+  }
+  SpeechRecognition.startListening()
 }
 
 const DELETION_INTERVAL = 4000
@@ -111,17 +121,10 @@ const App: React.FC = () => {
     })
   }
 
-  const handleSpeechRecognition = () => {
-    if (!browserSupportsSpeechRecognition) {
-      throw Error('browser does not support speech recognition')
-    }
-    SpeechRecognition.startListening()
-  }
-
   const startCall = async () => {
     handleTRTC()
     handleSocket()
-    handleSpeechRecognition()
+    startSpeechRecognition(browserSupportsSpeechRecognition)
   }
 
   const finishCall = async () => {
@@ -216,19 +219,26 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Setting
-        roomId={roomId}
-        userId={userId}
-        setLanguage={setLanguage}
-        setRoomId={setRoomId}
-        setUserId={setUserId}
-        setCameraId={setCameraId}
-        setMicrophoneId={setMicrophoneId}
-        startCall={startCall}
-        finishCall={finishCall}
-      />
+      <div
+        style={
+          localStream?.hasVideo() ? { display: 'none' } : { display: 'block' }
+        }
+      >
+        <Setting
+          roomId={roomId}
+          userId={userId}
+          setLanguage={setLanguage}
+          setRoomId={setRoomId}
+          setUserId={setUserId}
+          setCameraId={setCameraId}
+          setMicrophoneId={setMicrophoneId}
+          startCall={startCall}
+          finishCall={finishCall}
+        />
+      </div>
       <Stream />
       <Captions captionTexts={captionTexts} settingLanguage={language} />
+      <Controls localStream={localStream} />
     </>
   )
 }
