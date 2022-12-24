@@ -173,10 +173,10 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    if (localStream && deviceId) {
+    if (localStream?.hasVideo() && deviceId) {
       localStream.switchDevice('video', deviceId)
     }
-  }, [localStream?.hasVideo, deviceId])
+  }, [localStream, deviceId])
 
   useEffect(() => {
     if (socket?.connected) {
