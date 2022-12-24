@@ -9,8 +9,6 @@ import { genTestUserSig } from '../debug/GenerateTestUserSig'
 import { Languages, Setting } from './Setting'
 import '../style.css'
 
-type Transcripts = { time: number; transcript: string }[]
-
 const Stream: React.FC = () => {
   return (
     <>
@@ -20,9 +18,23 @@ const Stream: React.FC = () => {
   )
 }
 
-const Captions: React.FC<{ transcripts: Transcripts }> = ({
-  transcripts: captions,
-}) => {
+type Transcript = { time: number; transcript: string }
+
+type MessageToSend = {
+  isTranscriptEnded: boolean
+  language: Languages[number]['value']
+  transcript: string
+  time: number
+  userId: string
+}
+
+type MessageReceived = MessageToSend & {
+  translates: readonly (readonly [Languages, string])[]
+}
+
+const Captions: React.FC<{
+  captionTexts: (Transcript | MessageReceived)[]
+}> = ({ captionTexts: captions }) => {
   return (
     <div>
       {captions.map(({ time, transcript }) => (
@@ -32,14 +44,7 @@ const Captions: React.FC<{ transcripts: Transcripts }> = ({
   )
 }
 
-type Message = {
-  isTranscriptEnded: boolean
-  language: Languages[number]['value']
-  transcript: string
-  time: number
-  userId: string
-}
-function sendMessage(socket: Socket, message: Omit<Message, 'time'>) {
+function sendMessage(socket: Socket, message: Omit<MessageToSend, 'time'>) {
   socket.emit('send-message', { ...message, time: Date.now() })
 }
 
@@ -51,16 +56,17 @@ const App: React.FC = () => {
     listening,
     transcript,
   } = useSpeechRecognition()
+  const [captionTexts, setCaptionTexts] = useState<MessageReceived[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
-  const [isTranscriptEnded, setIsTranscriptEnded] = useState(false)
   const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
-  const [transcripts, setTranscripts] = useState<Transcripts>([])
+  const [transcripts, setTranscripts] = useState<Transcript[]>([])
   const [userId, setUserId] = useState('user1')
-  const transcriptWordsLength = useRef(0)
+  const isTranscriptEndedRef = useRef(true)
+  const transcriptWordsLengthRef = useRef(0)
 
   const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
@@ -108,8 +114,20 @@ const App: React.FC = () => {
       console.log('disconnected')
     })
 
-    isocket.on('receive-message', (data) => {
+    isocket.on('receive-message', (data: MessageReceived) => {
       console.log('receive-message', data)
+      if (data.isTranscriptEnded) {
+        return setCaptionTexts((prevs) => {
+          return [...prevs, data]
+        })
+      }
+      setCaptionTexts((prevs) => {
+        const index = prevs.findLastIndex((prev) => {
+          return prev.userId === data.userId
+        })
+        if (index === -1) return [...prevs, data]
+        return [...prevs.slice(0, index), data, ...prevs.slice(index + 1)]
+      })
     })
   }
 
@@ -154,51 +172,44 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!socket?.connected) return
     if (!transcript) {
-      transcriptWordsLength.current = 0
+      transcriptWordsLengthRef.current = 0
       return
     }
     const length = transcript.split(' ').length
-    if (length === transcriptWordsLength.current && !finalTranscript) {
+    if (length === transcriptWordsLengthRef.current && !finalTranscript) {
       return
     }
-    transcriptWordsLength.current = length
+    transcriptWordsLengthRef.current = length
     if (length === 1 && !finalTranscript) return
 
-    console.log('transcript', transcript)
-    console.log('transcriptReplaced', transcript.replace(/\s\S*$/, ''))
-    console.log('finalTranscript', finalTranscript)
-
     sendMessage(socket, {
-      isTranscriptEnded,
+      isTranscriptEnded: isTranscriptEndedRef.current,
       language,
       transcript: finalTranscript
         ? finalTranscript
         : transcript.replace(/\s\S*$/, ''),
       userId,
     })
-  }, [
-    finalTranscript,
-    isTranscriptEnded,
-    socket?.connected,
-    transcript,
-    transcriptWordsLength.current,
-  ])
+
+    if (finalTranscript) {
+      isTranscriptEndedRef.current = true
+    } else {
+      isTranscriptEndedRef.current = false
+    }
+  }, [finalTranscript, socket?.connected, transcript])
 
   useEffect(() => {
     if (!localStream?.hasVideo) return
-    if (listening && isTranscriptEnded && transcript) {
+    if (listening && isTranscriptEndedRef.current && transcript) {
       setTranscripts((prev) => [...prev, { time: Date.now(), transcript }])
-      setIsTranscriptEnded(false)
-    } else if (listening && !isTranscriptEnded) {
+    } else if (listening && !isTranscriptEndedRef.current) {
       setTranscripts((prev) => [
         ...prev.slice(0, -1),
         { time: Date.now(), transcript },
       ])
-    } else if (!listening && !isTranscriptEnded) {
-      setIsTranscriptEnded(true)
     }
     SpeechRecognition.startListening()
-  }, [isTranscriptEnded, listening, localStream?.hasVideo, transcript])
+  }, [listening, localStream?.hasVideo, transcript])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -224,7 +235,7 @@ const App: React.FC = () => {
         finishCall={finishCall}
       />
       <Stream />
-      <Captions transcripts={transcripts} />
+      <Captions captionTexts={captionTexts} />
     </>
   )
 }

@@ -1,14 +1,12 @@
 import { useState, useEffect, ChangeEvent } from 'react'
 import TRTC from 'trtc-js-sdk'
 
-export type Languages = readonly [
-  { label: 'English'; value: 'en' },
-  { label: '日本語'; value: 'ja' }
-]
-const languages = [
-  { label: 'English', value: 'en' },
-  { label: '日本語', value: 'ja' },
-] as const satisfies Languages
+const LANGUAGES = [
+  { label: 'English', value: 'en' } as const,
+  { label: '日本語', value: 'ja' } as const,
+] as const
+
+export type Languages = typeof LANGUAGES
 
 export const Setting: React.FC<{
   roomId: number
@@ -70,7 +68,7 @@ export const Setting: React.FC<{
             setLanguage(event.target.value as Languages[number]['value'])
           }
         >
-          {languages.map(({ label, value }) => (
+          {LANGUAGES.map(({ label, value }) => (
             <option value={value} key={value}>
               {label}
             </option>

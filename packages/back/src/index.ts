@@ -2,16 +2,38 @@ import { createServer } from 'http'
 import path from 'path'
 import dotenv from 'dotenv'
 import express from 'express'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import tencentcloud from 'tencentcloud-sdk-nodejs-tmt'
 import { TextTranslateResponse } from 'tencentcloud-sdk-nodejs-tmt/tencentcloud/services/tmt/v20180321/tmt_models'
+
+type Languages = 'en' | 'ja'
+
+type MessageReceived = {
+  isTranscriptEnded: boolean
+  language: Languages
+  transcript: string
+  time: number
+  userId: string
+}
+
+type MessageToEmit = MessageReceived & {
+  tranlates: readonly (readonly [Languages, string])[]
+}
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 }
 
+const app = express()
+const httpServer = createServer(app)
+const io = new Server(httpServer)
+
+app.get('/', (_, res) => {
+  res.send('Hello World!')
+})
+
 const TmtClient = tencentcloud.tmt.v20180321.Client
-const clientConfig = {
+const client = new TmtClient({
   credential: {
     secretId: process.env.TENCENT_SECRET_ID,
     secretKey: process.env.TENCENT_SECRET_KEY,
@@ -22,18 +44,7 @@ const clientConfig = {
       endpoint: 'tmt.tencentcloudapi.com',
     },
   },
-}
-const client = new TmtClient(clientConfig)
-textTranslate('子', 'en').then(
-  (data) => {
-    console.log(data)
-  },
-  (err) => {
-    console.error('error', err)
-  }
-)
-
-type Languages = 'en' | 'ja'
+})
 
 function textTranslate(
   text: string,
@@ -49,23 +60,44 @@ function textTranslate(
   return client.TextTranslate(params)
 }
 
-type Message = {
-  isTranscriptEnded: boolean
-  language: Languages
-  transcript: string
-  time: number
-  userId: string
+async function emitMessage({
+  languageSet,
+  message,
+  roomId,
+  socket,
+}: {
+  languageSet: Set<Languages>
+  message: MessageReceived
+  roomId: string
+  socket: Socket
+}): Promise<void> {
+  const responsePromises = [...languageSet]
+    .filter((language) => language !== message.language)
+    .map((language) =>
+      textTranslate(message.transcript, language).catch((err) =>
+        console.error('error', err)
+      )
+    )
+  const responses = await Promise.all(responsePromises)
+
+  const messageToEmit: MessageToEmit = {
+    ...message,
+    tranlates: responses
+      .flatMap((response) => (response == null ? [] : [response]))
+      .filter(
+        (
+          response
+        ): response is TextTranslateResponse & { Target: Languages } => {
+          if (languageSet.has(response.Target as Languages)) return true
+          throw Error(`Invalid language: ${response.Target}`)
+        }
+      )
+      .map(({ Target, TargetText }) => [Target, TargetText]),
+  }
+  socket.to(roomId).emit('receive-message', messageToEmit)
 }
 
-const app = express()
-const httpServer = createServer(app)
-const io = new Server(httpServer)
-
-app.get('/', (_, res) => {
-  res.send('Hello World!')
-})
-
-const languages: Set<Languages> = new Set()
+const languageSet: Set<Languages> = new Set()
 io.on('connection', (socket) => {
   let roomId = '0'
   console.log(`connect ${socket.id}`)
@@ -76,31 +108,18 @@ io.on('connection', (socket) => {
   })
 
   socket.on('send-language', (language: Languages) => {
-    languages.add(language)
+    languageSet.add(language)
     console.log(`send-language ${socket.id} ${language}`)
   })
 
-  socket.on('send-message', async (message: Message) => {
+  socket.on('send-message', async (message: MessageReceived) => {
     console.log(`send-message ${socket.id} ${message.transcript}`)
-    console.log('languages', languages)
-
-    const responsePromises = [...languages]
-      .filter((language) => language !== message.language)
-      .map((language) =>
-        textTranslate(message.transcript, language).catch((err) =>
-          console.error('error', err)
-        )
-      )
-    const responses = await Promise.all(responsePromises)
-
-    socket.to(roomId).emit('receive-message', {
-      ...message,
-      tranlates: responses
-        .flatMap((response) => (response == null ? [] : [response]))
-        .map((textTranslateResponse) => ({
-          language: textTranslateResponse.Target,
-          text: textTranslateResponse.TargetText,
-        })),
+    console.log('languages', languageSet)
+    emitMessage({
+      languageSet,
+      message,
+      roomId,
+      socket,
     })
   })
 
