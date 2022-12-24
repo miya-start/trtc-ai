@@ -12,7 +12,6 @@ export const Setting: React.FC<{
   setCameraId: (cameraId: string) => void
   setMicrophoneId: (microphoneId: string) => void
   startCall: () => void
-  finishCall: () => void
 }> = ({
   roomId,
   userId,
@@ -22,7 +21,6 @@ export const Setting: React.FC<{
   setCameraId,
   setMicrophoneId,
   startCall,
-  finishCall,
 }) => {
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([])
@@ -110,7 +108,6 @@ export const Setting: React.FC<{
         </select>
       </div>
       <button onClick={startCall}>Start Call</button>
-      <button onClick={finishCall}>Finish Call</button>
     </div>
   )
 }

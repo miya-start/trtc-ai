@@ -233,12 +233,17 @@ const App: React.FC = () => {
           setCameraId={setCameraId}
           setMicrophoneId={setMicrophoneId}
           startCall={startCall}
-          finishCall={finishCall}
         />
       </div>
-      <Stream />
-      <Captions captionTexts={captionTexts} settingLanguage={language} />
-      <Controls localStream={localStream} />
+      <div
+        style={
+          localStream?.hasVideo() ? { display: 'block' } : { display: 'none' }
+        }
+      >
+        <Stream />
+        <Captions captionTexts={captionTexts} settingLanguage={language} />
+        <Controls finishCall={finishCall} localStream={localStream} />
+      </div>
     </>
   )
 }

@@ -4,7 +4,8 @@ import TRTC, { type LocalStream } from 'trtc-js-sdk'
 
 export const Controls: React.FC<{
   localStream: LocalStream | null
-}> = ({ localStream }) => {
+  finishCall: () => void
+}> = ({ finishCall, localStream }) => {
   const [isMuted, setIsMuted] = useState(false)
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export const Controls: React.FC<{
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
       </div>
+      <button onClick={finishCall}>Finish Call</button>
     </div>
   )
 }
