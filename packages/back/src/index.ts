@@ -17,7 +17,7 @@ type MessageReceived = {
 }
 
 type MessageToEmit = MessageReceived & {
-  tranlates: readonly (readonly [Languages, string])[]
+  translates: readonly (readonly [Languages, string])[]
 }
 
 if (process.env.NODE_ENV !== 'production') {
@@ -82,7 +82,7 @@ async function emitMessage({
 
   const messageToEmit: MessageToEmit = {
     ...message,
-    tranlates: responses
+    translates: responses
       .flatMap((response) => (response == null ? [] : [response]))
       .filter(
         (

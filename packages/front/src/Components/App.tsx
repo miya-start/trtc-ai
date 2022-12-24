@@ -18,8 +18,6 @@ const Stream: React.FC = () => {
   )
 }
 
-type Transcript = { time: number; transcript: string }
-
 type MessageToSend = {
   isTranscriptEnded: boolean
   language: Languages[number]['value']
@@ -29,26 +27,50 @@ type MessageToSend = {
 }
 
 type MessageReceived = MessageToSend & {
-  translates: readonly (readonly [Languages, string])[]
+  translates: readonly (readonly [Languages[number]['value'], string])[]
+}
+
+type CaptionText = MessageToSend & {
+  translates: Map<Languages[number]['value'], string>
 }
 
 const Captions: React.FC<{
-  captionTexts: (Transcript | MessageReceived)[]
-}> = ({ captionTexts: captions }) => {
+  captionTexts: CaptionText[]
+  settingLanguage: Languages[number]['value']
+}> = ({ captionTexts: captions, settingLanguage }) => {
   return (
     <div>
-      {captions.map(({ time, transcript }) => (
-        <div key={time}>{transcript}</div>
-      ))}
+      {captions
+        .sort((a, b) => a.time - b.time)
+        .map(({ time, transcript, translates, userId }) => (
+          <div key={`${time}${userId}`}>
+            <span>{userId}: </span>
+            {translates.has(settingLanguage)
+              ? translates.get(settingLanguage)
+              : transcript}
+          </div>
+        ))}
     </div>
   )
+}
+
+function insertCaption(
+  prevs: CaptionText[],
+  next: CaptionText,
+  userId: string
+) {
+  const index = prevs.findLastIndex((prev) => {
+    return prev.userId === userId
+  })
+  if (index === -1) return [...prevs, next]
+  return [...prevs.slice(0, index), next, ...prevs.slice(index + 1)]
 }
 
 function sendMessage(socket: Socket, message: Omit<MessageToSend, 'time'>) {
   socket.emit('send-message', { ...message, time: Date.now() })
 }
 
-const DELETION_INTERVAL = 2000
+const DELETION_INTERVAL = 4000
 const App: React.FC = () => {
   const {
     browserSupportsSpeechRecognition,
@@ -56,14 +78,13 @@ const App: React.FC = () => {
     listening,
     transcript,
   } = useSpeechRecognition()
-  const [captionTexts, setCaptionTexts] = useState<MessageReceived[]>([])
+  const [captionTexts, setCaptionTexts] = useState<CaptionText[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [deviceId, setDeviceId] = useState<string | null>(null)
   const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
-  const [transcripts, setTranscripts] = useState<Transcript[]>([])
   const [userId, setUserId] = useState('user1')
   const isTranscriptEndedRef = useRef(true)
   const transcriptWordsLengthRef = useRef(0)
@@ -116,18 +137,13 @@ const App: React.FC = () => {
 
     isocket.on('receive-message', (data: MessageReceived) => {
       console.log('receive-message', data)
+      const caption = { ...data, translates: new Map(data.translates) }
       if (data.isTranscriptEnded) {
         return setCaptionTexts((prevs) => {
-          return [...prevs, data]
+          return [...prevs, caption]
         })
       }
-      setCaptionTexts((prevs) => {
-        const index = prevs.findLastIndex((prev) => {
-          return prev.userId === data.userId
-        })
-        if (index === -1) return [...prevs, data]
-        return [...prevs.slice(0, index), data, ...prevs.slice(index + 1)]
-      })
+      setCaptionTexts((prevs) => insertCaption(prevs, caption, data.userId))
     })
   }
 
@@ -182,6 +198,20 @@ const App: React.FC = () => {
     transcriptWordsLengthRef.current = length
     if (length === 1 && !finalTranscript) return
 
+    const caption = {
+      isTranscriptEnded: isTranscriptEndedRef.current,
+      language,
+      transcript,
+      userId,
+      translates: new Map(),
+      time: Date.now(),
+    }
+    if (isTranscriptEndedRef.current) {
+      setCaptionTexts((prevs) => [...prevs, caption])
+    } else {
+      setCaptionTexts((prevs) => insertCaption(prevs, caption, userId))
+    }
+
     sendMessage(socket, {
       isTranscriptEnded: isTranscriptEndedRef.current,
       language,
@@ -200,27 +230,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!localStream?.hasVideo) return
-    if (listening && isTranscriptEndedRef.current && transcript) {
-      setTranscripts((prev) => [...prev, { time: Date.now(), transcript }])
-    } else if (listening && !isTranscriptEndedRef.current) {
-      setTranscripts((prev) => [
-        ...prev.slice(0, -1),
-        { time: Date.now(), transcript },
-      ])
-    }
-    SpeechRecognition.startListening()
-  }, [listening, localStream?.hasVideo, transcript])
+    if (!listening) SpeechRecognition.startListening()
+  }, [listening, localStream?.hasVideo])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (transcripts.length === 0) return
+      if (captionTexts.length === 0) return
       const now = Date.now()
-      setTranscripts((prev) =>
+      setCaptionTexts((prev) =>
         prev.filter(({ time }) => now - time < DELETION_INTERVAL)
       )
     }, DELETION_INTERVAL)
     return () => clearTimeout(timeoutId)
-  }, [transcript, transcripts.length])
+  }, [captionTexts])
 
   return (
     <>
@@ -235,7 +257,7 @@ const App: React.FC = () => {
         finishCall={finishCall}
       />
       <Stream />
-      <Captions captionTexts={captionTexts} />
+      <Captions captionTexts={captionTexts} settingLanguage={language} />
     </>
   )
 }
