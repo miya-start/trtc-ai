@@ -3,56 +3,19 @@ import { useEffect, useRef, useState } from 'react'
 import SpeechRecognition, {
   useSpeechRecognition,
 } from 'react-speech-recognition'
-import { io, Socket } from 'socket.io-client'
-import TRTC, { Client, LocalStream } from 'trtc-js-sdk'
+import { io, type Socket } from 'socket.io-client'
+import TRTC, { type Client, type LocalStream } from 'trtc-js-sdk'
 import { genTestUserSig } from '../debug/GenerateTestUserSig'
-import { Languages, Setting } from './Setting'
+import { Captions } from './Caption'
+import { Setting } from './Setting'
+import { Stream } from './Stream'
+import {
+  type Languages,
+  type MessageReceived,
+  type CaptionText,
+  type MessageToSend,
+} from '../types'
 import '../style.css'
-
-const Stream: React.FC = () => {
-  return (
-    <>
-      <div id="localStreamContainer" />
-      <div id="remoteStreamContainer" />
-    </>
-  )
-}
-
-type MessageToSend = {
-  isTranscriptEnded: boolean
-  language: Languages[number]['value']
-  transcript: string
-  time: number
-  userId: string
-}
-
-type MessageReceived = MessageToSend & {
-  translates: readonly (readonly [Languages[number]['value'], string])[]
-}
-
-type CaptionText = MessageToSend & {
-  translates: Map<Languages[number]['value'], string>
-}
-
-const Captions: React.FC<{
-  captionTexts: CaptionText[]
-  settingLanguage: Languages[number]['value']
-}> = ({ captionTexts: captions, settingLanguage }) => {
-  return (
-    <div>
-      {captions
-        .sort((a, b) => a.time - b.time)
-        .map(({ time, transcript, translates, userId }) => (
-          <div key={`${time}${userId}`}>
-            <span>{userId}: </span>
-            {translates.has(settingLanguage)
-              ? translates.get(settingLanguage)
-              : transcript}
-          </div>
-        ))}
-    </div>
-  )
-}
 
 function insertCaption(
   prevs: CaptionText[],

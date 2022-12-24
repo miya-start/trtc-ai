@@ -1,12 +1,7 @@
-import { useState, useEffect, ChangeEvent } from 'react'
+import { useState, useEffect, type ChangeEvent } from 'react'
 import TRTC from 'trtc-js-sdk'
-
-const LANGUAGES = [
-  { label: 'English', value: 'en' } as const,
-  { label: '日本語', value: 'ja' } as const,
-] as const
-
-export type Languages = typeof LANGUAGES
+import { LANGUAGES } from '../constants'
+import { type Languages } from '../types'
 
 export const Setting: React.FC<{
   roomId: number
