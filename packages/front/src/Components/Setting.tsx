@@ -40,21 +40,21 @@ export const Setting: React.FC<{
   return (
     <>
       <div className="p-6 bg-gray-700 text-white">
-        <div className="mb-6">
-          <label htmlFor="roomId" className="block mb-2 text-sm font-medium">
-            Room Number:
-          </label>
-          <input
-            type="text"
-            id="roomId"
-            className="border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-            placeholder='e.g. "1"'
-            value={roomId}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setRoomId(Number(e.target.value))
-            }
-          />
-        </div>
+        {/* <div className="mb-6">
+        <label htmlFor="roomId" className="block mb-2 text-sm font-medium">
+          Room Number:
+        </label>
+        <input
+          type="text"
+          id="roomId"
+          className="border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+          placeholder='e.g. "1"'
+          value={roomId}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setRoomId(Number(e.target.value))
+          }
+        />
+      </div> */}
         <div className="mb-6">
           <label htmlFor="userId" className="block mb-2 text-sm font-medium">
             User Name:

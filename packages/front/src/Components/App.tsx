@@ -54,12 +54,13 @@ const App: React.FC = () => {
   const [client, setClient] = useState<Client | null>(null)
   const [cameraId, setCameraId] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const [microphoneId, setMicrophoneId] = useState<string | null>(null)
   const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
-  const [userId, setUserId] = useState('user1')
+  const [userId, setUserId] = useState('')
   const isTranscriptEndedRef = useRef(true)
   const transcriptWordsLengthRef = useRef(0)
 
@@ -205,8 +206,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!localStream?.hasAudio()) return
-    if (!listening) SpeechRecognition.startListening()
-  }, [listening, localStream])
+    if (!listening && !isMuted) SpeechRecognition.startListening()
+  }, [isMuted, listening, localStream])
 
   useEffect(() => {
     setTimeout(() => {
@@ -245,7 +246,12 @@ const App: React.FC = () => {
             : 'hidden'
         }
       >
-        <Controls finishCall={finishCall} localStream={localStream} />
+        <Controls
+          isMuted={isMuted}
+          setIsMuted={setIsMuted}
+          finishCall={finishCall}
+          localStream={localStream}
+        />
       </div>
     </div>
   )

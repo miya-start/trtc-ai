@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import SpeechRecognition from 'react-speech-recognition'
 import TRTC, { type LocalStream } from 'trtc-js-sdk'
 
 export const Controls: React.FC<{
+  isMuted: boolean
+  setIsMuted: React.Dispatch<React.SetStateAction<boolean>>
   finishCall: () => void
   localStream: LocalStream | null
-}> = ({ finishCall, localStream }) => {
-  const [isMuted, setIsMuted] = useState(false)
-
+}> = ({ isMuted, setIsMuted, finishCall, localStream }) => {
   useEffect(() => {
     if (!localStream) return
     if (isMuted) {
