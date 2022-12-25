@@ -16,7 +16,6 @@ import {
   type CaptionText,
   type MessageToSend,
 } from '../types'
-import '../style.css'
 
 function insertCaption(
   prevs: CaptionText[],
@@ -54,6 +53,7 @@ const App: React.FC = () => {
   const [captionTexts, setCaptionTexts] = useState<CaptionText[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [cameraId, setCameraId] = useState<string | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
   const [microphoneId, setMicrophoneId] = useState<string | null>(null)
   const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
@@ -125,6 +125,7 @@ const App: React.FC = () => {
     handleTRTC()
     handleSocket()
     startSpeechRecognition(browserSupportsSpeechRecognition)
+    setIsConnected(true)
   }
 
   const finishCall = async () => {
@@ -137,6 +138,7 @@ const App: React.FC = () => {
     client.destroy()
     socket.disconnect()
     SpeechRecognition.stopListening()
+    setIsConnected(false)
   }
 
   useEffect(() => {
@@ -202,9 +204,9 @@ const App: React.FC = () => {
   }, [finalTranscript, socket?.connected, transcript])
 
   useEffect(() => {
-    if (!localStream?.hasVideo) return
+    if (!localStream?.hasAudio()) return
     if (!listening) SpeechRecognition.startListening()
-  }, [listening, localStream?.hasVideo])
+  }, [listening, localStream])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -218,11 +220,9 @@ const App: React.FC = () => {
   }, [captionTexts])
 
   return (
-    <>
+    <div className="grid grid-rows-[1fr,3rem] h-screen min-h-screen bg-gray-800">
       <div
-        style={
-          localStream?.hasVideo() ? { display: 'none' } : { display: 'block' }
-        }
+        className={isConnected ? 'hidden' : 'flex justify-center items-center'}
       >
         <Setting
           roomId={roomId}
@@ -235,16 +235,20 @@ const App: React.FC = () => {
           startCall={startCall}
         />
       </div>
+      <div className={isConnected ? 'flex justify-center' : 'hidden'}>
+        <Stream />
+      </div>
+      <Captions captionTexts={captionTexts} settingLanguage={language} />
       <div
-        style={
-          localStream?.hasVideo() ? { display: 'block' } : { display: 'none' }
+        className={
+          localStream?.hasVideo()
+            ? 'flex justify-center items-center gap-4 h-16 text-sm text-gray-400'
+            : 'hidden'
         }
       >
-        <Stream />
-        <Captions captionTexts={captionTexts} settingLanguage={language} />
         <Controls finishCall={finishCall} localStream={localStream} />
       </div>
-    </>
+    </div>
   )
 }
 

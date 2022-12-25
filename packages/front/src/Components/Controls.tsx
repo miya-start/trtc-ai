@@ -3,8 +3,8 @@ import SpeechRecognition from 'react-speech-recognition'
 import TRTC, { type LocalStream } from 'trtc-js-sdk'
 
 export const Controls: React.FC<{
-  localStream: LocalStream | null
   finishCall: () => void
+  localStream: LocalStream | null
 }> = ({ finishCall, localStream }) => {
   const [isMuted, setIsMuted] = useState(false)
 
@@ -31,7 +31,7 @@ export const Controls: React.FC<{
   }, [isMuted, localStream])
 
   return (
-    <div className="container">
+    <>
       <div>
         <button
           onClick={() => {
@@ -42,6 +42,6 @@ export const Controls: React.FC<{
         </button>
       </div>
       <button onClick={finishCall}>Finish Call</button>
-    </div>
+    </>
   )
 }
