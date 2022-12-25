@@ -220,7 +220,7 @@ const App: React.FC = () => {
   }, [captionTexts])
 
   return (
-    <div className="grid grid-rows-[1fr,3rem] h-screen min-h-screen bg-gray-800">
+    <div className="grid grid-rows-[1fr,6rem] h-screen min-h-screen bg-gray-800">
       <div
         className={isConnected ? 'hidden' : 'flex justify-center items-center'}
       >
@@ -235,14 +235,14 @@ const App: React.FC = () => {
           startCall={startCall}
         />
       </div>
-      <div className={isConnected ? 'flex justify-center' : 'hidden'}>
+      <div className={isConnected ? 'relative flex justify-center' : 'hidden'}>
         <Stream />
+        <Captions captionTexts={captionTexts} settingLanguage={language} />
       </div>
-      <Captions captionTexts={captionTexts} settingLanguage={language} />
       <div
         className={
           localStream?.hasVideo()
-            ? 'flex justify-center items-center gap-4 h-16 text-sm text-gray-400'
+            ? 'flex justify-center items-center gap-4 text-sm text-gray-400'
             : 'hidden'
         }
       >
