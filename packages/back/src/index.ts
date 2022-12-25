@@ -28,10 +28,6 @@ const app = express()
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 
-app.get('/', (_, res) => {
-  res.send('Hello World!')
-})
-
 const TmtClient = tencentcloud.tmt.v20180321.Client
 const client = new TmtClient({
   credential: {
