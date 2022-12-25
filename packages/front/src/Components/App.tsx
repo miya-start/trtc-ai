@@ -209,14 +209,13 @@ const App: React.FC = () => {
   }, [listening, localStream])
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    setTimeout(() => {
       if (captionTexts.length === 0) return
       const now = Date.now()
       setCaptionTexts((prev) =>
         prev.filter(({ time }) => now - time < DELETION_INTERVAL)
       )
     }, DELETION_INTERVAL)
-    return () => clearTimeout(timeoutId)
   }, [captionTexts])
 
   return (
