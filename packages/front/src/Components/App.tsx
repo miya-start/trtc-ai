@@ -10,21 +10,14 @@ import { Captions } from './Caption'
 import { Controls } from './Controls'
 import { Setting } from './Setting'
 import { Stream } from './Stream'
-import {
-  type Languages,
-  type MessageReceived,
-  type CaptionText,
-  type MessageToSend,
-} from '../types'
+import { type MessageToSend } from '../types'
 
 function insertCaption(
-  prevs: CaptionText[],
-  next: CaptionText,
+  prevs: MessageToSend[],
+  next: MessageToSend,
   userId: string
-): CaptionText[] {
-  const index = prevs.findLastIndex((prev) => {
-    return prev.userId === userId
-  })
+): MessageToSend[] {
+  const index = prevs.findLastIndex((prev) => prev.userId === userId)
   if (index === -1) return [...prevs, next]
   return [...prevs.slice(0, index), next, ...prevs.slice(index + 1)]
 }
@@ -39,7 +32,7 @@ function startSpeechRecognition(
   if (!browserSupportsSpeechRecognition) {
     throw Error('browser does not support speech recognition')
   }
-  SpeechRecognition.startListening()
+  SpeechRecognition.startListening({ language: 'ja' })
 }
 
 const DELETION_INTERVAL = 4000
@@ -50,13 +43,12 @@ const App: React.FC = () => {
     listening,
     transcript,
   } = useSpeechRecognition()
-  const [captionTexts, setCaptionTexts] = useState<CaptionText[]>([])
+  const [captionTexts, setCaptionTexts] = useState<MessageToSend[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [cameraId, setCameraId] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [microphoneId, setMicrophoneId] = useState<string | null>(null)
-  const [language, setLanguage] = useState<Languages[number]['value']>('ja')
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
@@ -110,15 +102,12 @@ const App: React.FC = () => {
       console.log('disconnected')
     })
 
-    isocket.on('receive-message', (data: MessageReceived) => {
+    isocket.on('receive-message', (data: MessageToSend) => {
       console.log('receive-message', data)
-      const caption = { ...data, translates: new Map(data.translates) }
       if (data.isTranscriptEnded) {
-        return setCaptionTexts((prevs) => {
-          return [...prevs, caption]
-        })
+        return setCaptionTexts((prevs) => [...prevs, { ...data }])
       }
-      setCaptionTexts((prevs) => insertCaption(prevs, caption, data.userId))
+      setCaptionTexts((prevs) => insertCaption(prevs, { ...data }, data.userId))
     })
   }
 
@@ -157,7 +146,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (socket?.connected) {
       socket.emit('join-room', `${roomId}`)
-      socket.emit('send-language', language)
     }
   }, [socket?.connected])
 
@@ -176,10 +164,8 @@ const App: React.FC = () => {
 
     const caption = {
       isTranscriptEnded: isTranscriptEndedRef.current,
-      language,
       transcript,
       userId,
-      translates: new Map(),
       time: Date.now(),
     }
     if (isTranscriptEndedRef.current) {
@@ -227,7 +213,6 @@ const App: React.FC = () => {
         <Setting
           roomId={roomId}
           userId={userId}
-          setLanguage={setLanguage}
           setRoomId={setRoomId}
           setUserId={setUserId}
           setCameraId={setCameraId}
@@ -237,7 +222,7 @@ const App: React.FC = () => {
       </div>
       <div className={isConnected ? 'relative flex justify-center' : 'hidden'}>
         <Stream />
-        <Captions captionTexts={captionTexts} settingLanguage={language} />
+        <Captions captionTexts={captionTexts} />
       </div>
       <div
         className={
