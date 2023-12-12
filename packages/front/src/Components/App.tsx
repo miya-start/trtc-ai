@@ -4,38 +4,16 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from 'react-speech-recognition'
 import { io, type Socket } from 'socket.io-client'
-import TRTC, { type Client, type LocalStream } from 'trtc-js-sdk'
-import { genTestUserSig } from '../debug/GenerateTestUserSig'
+import { type Client, type LocalStream } from 'trtc-js-sdk'
 import { Captions } from './Caption'
 import { Controls } from './Controls'
 import { Setting } from './Setting'
 import { Stream } from './Stream'
 import { type MessageToSend } from '../types'
+import { DELETION_INTERVAL, insertCaption } from '../features/caption'
+import { startSpeechRecognition } from '../features/speech-recognition'
+import { handleTRTC } from '../features/stream'
 
-function insertCaption(
-  prevs: MessageToSend[],
-  next: MessageToSend,
-  userId: string
-): MessageToSend[] {
-  const index = prevs.findLastIndex((prev) => prev.userId === userId)
-  if (index === -1) return [...prevs, next]
-  return [...prevs.slice(0, index), next, ...prevs.slice(index + 1)]
-}
-
-function sendMessage(socket: Socket, message: MessageToSend): void {
-  socket.emit('send-message', message)
-}
-
-function startSpeechRecognition(
-  browserSupportsSpeechRecognition: boolean
-): void {
-  if (!browserSupportsSpeechRecognition) {
-    throw Error('browser does not support speech recognition')
-  }
-  SpeechRecognition.startListening({ language: 'ja' })
-}
-
-const DELETION_INTERVAL = 4000
 const App: React.FC = () => {
   const {
     browserSupportsSpeechRecognition,
@@ -54,52 +32,9 @@ const App: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null)
   const [userId, setUserId] = useState('')
 
-  const handleTRTC = async () => {
-    const { sdkAppId, userSig } = genTestUserSig(userId)
-    const iclient = TRTC.createClient({
-      mode: 'rtc',
-      sdkAppId,
-      userId,
-      userSig,
-    })
-    setClient(iclient)
-    iclient.on('stream-added', (event) => {
-      const remoteStream = event.stream
-      console.log('remote stream add streamId: ' + remoteStream.getId())
-      iclient.subscribe(remoteStream)
-    })
-    iclient.on('stream-subscribed', (event) => {
-      const remoteStream = event.stream
-      remoteStream.play('remoteStreamContainer')
-    })
-
-    try {
-      await iclient.join({ roomId })
-      const localStream = TRTC.createStream({
-        userId,
-        audio: true,
-        video: true,
-      })
-      await localStream.initialize()
-      localStream.play('localStreamContainer')
-      await iclient.publish(localStream)
-      setLocalStream(localStream)
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
   const handleSocket = () => {
     const isocket = io()
     setSocket(isocket)
-
-    isocket.on('connect', () => {
-      console.log('connected')
-    })
-    isocket.on('disconnect', () => {
-      console.log('disconnected')
-    })
-
     isocket.on('receive-message', (data: MessageToSend) => {
       console.log('receive-message', data)
       setCaptionTexts((prevs) => insertCaption(prevs, { ...data }, data.userId))
@@ -107,7 +42,12 @@ const App: React.FC = () => {
   }
 
   const startCall = async () => {
-    handleTRTC()
+    const { client: iclient, localStream: ilocalStream } = await handleTRTC({
+      roomId,
+      userId,
+    })
+    setClient(iclient)
+    setLocalStream(ilocalStream)
     handleSocket()
     startSpeechRecognition(browserSupportsSpeechRecognition)
     setIsConnected(true)
@@ -115,9 +55,8 @@ const App: React.FC = () => {
 
   const finishCall = async () => {
     if (!localStream) return
-    if (!client || !socket) {
-      throw Error('client or socket is null')
-    }
+    if (!client || !socket) throw Error('client or socket is null')
+
     localStream.close()
     await client.leave()
     client.destroy()
@@ -127,22 +66,23 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    if (localStream?.hasVideo() && cameraId) {
-      localStream.switchDevice('video', cameraId)
-    }
-  }, [localStream, cameraId])
-
-  useEffect(() => {
-    if (localStream?.hasAudio() && microphoneId) {
-      localStream.switchDevice('audio', microphoneId)
-    }
-  }, [localStream, microphoneId])
-
-  useEffect(() => {
-    if (socket?.connected) {
-      socket.emit('join-room', `${roomId}`)
-    }
+    if (socket?.connected) socket.emit('join-room', `${roomId}`)
   }, [socket?.connected])
+
+  useEffect(() => {
+    if (!localStream?.hasAudio()) return
+    if (!listening && !isMuted) SpeechRecognition.startListening()
+  }, [isMuted, listening, localStream])
+
+  useEffect(() => {
+    if (!localStream) return
+
+    if (localStream.hasVideo() && cameraId)
+      localStream.switchDevice('video', cameraId)
+
+    if (localStream.hasAudio() && microphoneId)
+      localStream.switchDevice('audio', microphoneId)
+  }, [localStream, cameraId, microphoneId])
 
   useEffect(() => {
     if (!socket?.connected || !transcript) return
@@ -153,16 +93,11 @@ const App: React.FC = () => {
       time: Date.now(),
     }
     setCaptionTexts((prevs) => insertCaption(prevs, caption, userId))
-    sendMessage(socket, {
+    socket.emit('send-message', {
       ...caption,
       transcript: finalTranscript || transcript.replace(/\s\S*$/, ''),
     })
   }, [finalTranscript, socket?.connected, transcript])
-
-  useEffect(() => {
-    if (!localStream?.hasAudio()) return
-    if (!listening && !isMuted) SpeechRecognition.startListening()
-  }, [isMuted, listening, localStream])
 
   useEffect(() => {
     setTimeout(() => {
