@@ -5,7 +5,6 @@ import express from 'express'
 import { Server, Socket } from 'socket.io'
 
 type MessageReceived = {
-  isTranscriptEnded: boolean
   transcript: string
   time: number
   userId: string

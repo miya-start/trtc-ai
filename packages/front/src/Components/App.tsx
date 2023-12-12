@@ -1,5 +1,5 @@
 import 'regenerator-runtime' // for the bug of react-speech-recognition
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import SpeechRecognition, {
   useSpeechRecognition,
 } from 'react-speech-recognition'
@@ -53,8 +53,6 @@ const App: React.FC = () => {
   const [roomId, setRoomId] = useState(1)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [userId, setUserId] = useState('')
-  const isTranscriptEndedRef = useRef(true)
-  const transcriptWordsLengthRef = useRef(0)
 
   const handleTRTC = async () => {
     const { sdkAppId, userSig } = genTestUserSig(userId)
@@ -104,9 +102,6 @@ const App: React.FC = () => {
 
     isocket.on('receive-message', (data: MessageToSend) => {
       console.log('receive-message', data)
-      if (data.isTranscriptEnded) {
-        return setCaptionTexts((prevs) => [...prevs, { ...data }])
-      }
       setCaptionTexts((prevs) => insertCaption(prevs, { ...data }, data.userId))
     })
   }
@@ -150,44 +145,18 @@ const App: React.FC = () => {
   }, [socket?.connected])
 
   useEffect(() => {
-    if (!socket?.connected) return
-    if (!transcript) {
-      transcriptWordsLengthRef.current = 0
-      return
-    }
-    const length = transcript.split(' ').length
-    if (length === transcriptWordsLengthRef.current && !finalTranscript) {
-      return
-    }
-    transcriptWordsLengthRef.current = length
-    if (length === 1 && !finalTranscript) return
+    if (!socket?.connected || !transcript) return
 
     const caption = {
-      isTranscriptEnded: isTranscriptEndedRef.current,
       transcript,
       userId,
       time: Date.now(),
     }
-    if (isTranscriptEndedRef.current) {
-      setCaptionTexts((prevs) => [...prevs, caption])
-    } else {
-      setCaptionTexts((prevs) => insertCaption(prevs, caption, userId))
-    }
-
+    setCaptionTexts((prevs) => insertCaption(prevs, caption, userId))
     sendMessage(socket, {
       ...caption,
-      transcript: finalTranscript
-        ? finalTranscript
-        : transcript.replace(/\s\S*$/, ''),
+      transcript: finalTranscript || transcript.replace(/\s\S*$/, ''),
     })
-
-    console.log('transcript', transcript)
-
-    if (finalTranscript) {
-      isTranscriptEndedRef.current = true
-    } else {
-      isTranscriptEndedRef.current = false
-    }
   }, [finalTranscript, socket?.connected, transcript])
 
   useEffect(() => {
