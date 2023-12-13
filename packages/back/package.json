@@ -21,5 +21,10 @@
     "express": "^4.18.2",
     "socket.io": "^4.5.4",
     "tencentcloud-sdk-nodejs-tmt": "^4.0.508"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "eslint": "^8.55.0"
   }
 }

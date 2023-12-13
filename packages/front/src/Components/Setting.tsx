@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent } from 'react'
+import React, { useState, useEffect, type ChangeEvent } from 'react'
 import TRTC from 'trtc-js-sdk'
 
 export const Setting: React.FC<{

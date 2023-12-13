@@ -1,5 +1,5 @@
+import React, { useCallback, useEffect, useState } from 'react'
 import 'regenerator-runtime' // for the bug of react-speech-recognition
-import { useCallback, useEffect, useState } from 'react'
 import { useSpeechRecognition } from 'react-speech-recognition'
 import { type Socket } from 'socket.io-client'
 import { type Client, type LocalStream } from 'trtc-js-sdk'

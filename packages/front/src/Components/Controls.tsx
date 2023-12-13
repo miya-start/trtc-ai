@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import SpeechRecognition from 'react-speech-recognition'
 import TRTC, { type LocalStream } from 'trtc-js-sdk'
 

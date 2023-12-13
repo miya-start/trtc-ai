@@ -1,3 +1,4 @@
+import React from 'react'
 import { MessageToSend } from '../types'
 
 export const Captions: React.FC<{
