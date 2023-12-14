@@ -36,15 +36,19 @@ const handleTRTC = async ({
 }
 
 export async function startSteam({
+  roomId,
+  userId,
   setClient,
   setIsConnected,
   setLocalStream,
 }: {
+  roomId: number
+  userId: string
   setClient: (client: Client) => void
   setIsConnected: React.Dispatch<React.SetStateAction<boolean>>
   setLocalStream: (localStream: LocalStream) => void
 }) {
-  const { client, localStream } = await handleTRTC({ roomId: 1, userId: '1' })
+  const { client, localStream } = await handleTRTC({ roomId, userId })
   setClient(client)
   setIsConnected(true)
   setLocalStream(localStream)

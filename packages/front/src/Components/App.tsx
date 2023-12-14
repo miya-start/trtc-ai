@@ -35,13 +35,21 @@ const App: React.FC = () => {
   const [userId, setUserId] = useState('')
 
   const startCall = useCallback(() => {
-    startSteam({ setClient, setIsConnected, setLocalStream })
+    startSteam({
+      roomId,
+      userId,
+      setClient,
+      setIsConnected,
+      setLocalStream,
+    })
     startSocket({
       browserSupportsSpeechRecognition,
       setCaptionTexts,
       setSocket,
     })
   }, [
+    roomId,
+    userId,
     browserSupportsSpeechRecognition,
     setCaptionTexts,
     setClient,
