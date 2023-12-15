@@ -18,7 +18,11 @@
   },
   "homepage": "https://github.com/miya-start/trtc-basic#readme",
   "dependencies": {
+    "@types/node-fetch": "^2.6.9",
+    "eslint-plugin-neverthrow": "^1.1.4",
     "express": "^4.18.2",
+    "neverthrow": "^6.1.0",
+    "node-fetch": "^3.3.2",
     "socket.io": "^4.5.4",
     "tencentcloud-sdk-nodejs-tmt": "^4.0.508"
   },

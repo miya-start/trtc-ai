@@ -3,6 +3,9 @@ import path from 'path'
 import dotenv from 'dotenv'
 import express from 'express'
 import { Server, Socket } from 'socket.io'
+import { createAudio } from './features/ai-voice/workflow.js'
+
+const audioResultAsync = createAudio('hello world')
 
 type MessageReceived = {
   transcript: string
@@ -30,9 +33,15 @@ async function emitMessage({
   socket.to(roomId).emit('receive-message', message)
 }
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   let roomId = '0'
   console.log(`connect ${socket.id}`)
+
+  const audioResult = await audioResultAsync
+  if (audioResult.isErr()) {
+    console.error(audioResult.error)
+    return
+  }
 
   socket.on('join-room', (iroomId: string) => {
     socket.join(iroomId)
@@ -46,6 +55,9 @@ io.on('connection', (socket) => {
       roomId,
       socket,
     })
+
+    console.log('audioResult.value', audioResult.value)
+    socket.emit('ai-audio', audioResult.value)
   })
 
   socket.on('disconnect', () => {
