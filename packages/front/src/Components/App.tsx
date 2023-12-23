@@ -9,12 +9,13 @@ import {
   finishSocket,
   useSpeechRecognitionStart,
 } from '../features/socket'
-import { startSteam, finishStream, useSwitchDevice } from '../features/stream'
+import { startStream, finishStream, useSwitchDevice } from '../features/stream'
 import { type MessageToSend } from '../types'
 import { Captions } from './Caption'
 import { Controls } from './Controls'
 import { Setting } from './Setting'
 import { Stream } from './Stream'
+import { VirtualWithProvider } from '../Virtual'
 
 const App: React.FC = () => {
   const {
@@ -35,7 +36,7 @@ const App: React.FC = () => {
   const [userId, setUserId] = useState('')
 
   const startCall = useCallback(() => {
-    startSteam({
+    startStream({
       roomId,
       userId,
       setClient,
@@ -96,6 +97,7 @@ const App: React.FC = () => {
       </div>
       <div className={isConnected ? 'relative flex justify-center' : 'hidden'}>
         <Stream />
+        <VirtualWithProvider />
         <Captions captionTexts={captionTexts} />
       </div>
       <div

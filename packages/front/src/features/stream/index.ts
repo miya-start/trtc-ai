@@ -35,7 +35,7 @@ const handleTRTC = async ({
   }
 }
 
-export async function startSteam({
+export async function startStream({
   roomId,
   userId,
   setClient,

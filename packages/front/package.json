@@ -9,6 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "9.75.0",
+    "@react-three/fiber": "8.13.3",
+    "@react-three/xr": "^5.7.1",
+    "@types/three": "0.152.1",
     "buffer": "^6.0.3",
     "eslint": "^8.55.0",
     "react": "^18.2.0",
@@ -16,7 +20,9 @@
     "react-speech-recognition": "^3.10.0",
     "regenerator-runtime": "^0.13.11",
     "socket.io-client": "^4.5.4",
-    "trtc-js-sdk": "^4.15.1"
+    "three": "0.153.0",
+    "trtc-js-sdk": "^4.15.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",
