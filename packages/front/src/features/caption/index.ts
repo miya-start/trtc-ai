@@ -67,7 +67,6 @@ export function useCaptionEmission({
       isSpeechEnded.current = false
     }
 
-    if (transcript === finalTranscript) return
     const caption = {
       transcript,
       userId,
@@ -79,6 +78,7 @@ export function useCaptionEmission({
     socket.emit('send-message', {
       ...caption,
       transcript: finalTranscript || transcript.replace(/\s\S*$/, ''),
+      isEnd: !!finalTranscript,
     })
   }, [finalTranscript, socket?.connected, transcript])
 }
