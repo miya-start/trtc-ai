@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import 'regenerator-runtime' // for the bug of react-speech-recognition
 import { useSpeechRecognition } from 'react-speech-recognition'
 import { type Client, type LocalStream } from 'trtc-js-sdk'
-import { useEmitCaption, useDeleteCaption } from '../features/caption'
+import { useCaptionEmission, useCaptionDeletion } from '../features/caption'
 import {
   startSocket,
   finishSocket,
@@ -33,7 +33,7 @@ const App: React.FC = () => {
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [userId, setUserId] = useState('')
-  const { socket, setSocket } = useChat()
+  const { aiAudio, socket, setSocket } = useChat()
 
   const startCall = useCallback(() => {
     startStream({
@@ -71,14 +71,15 @@ const App: React.FC = () => {
   useSpeechRecognitionStart(isMuted, listening, localStream)
   useSwitchDevice({ localStream, cameraId, microphoneId })
 
-  useEmitCaption({
+  useCaptionEmission({
+    aiAudio,
     finalTranscript,
     setCaptionTexts,
     socket,
     transcript,
     userId,
   })
-  useDeleteCaption({ captionTexts, setCaptionTexts })
+  useCaptionDeletion({ captionTexts, setCaptionTexts })
 
   return (
     <div className="grid grid-rows-[1fr,6rem] h-screen min-h-screen bg-gray-800">

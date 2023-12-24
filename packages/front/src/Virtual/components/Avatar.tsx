@@ -9,11 +9,8 @@ import { useFrame } from '@react-three/fiber'
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTF } from 'three-stdlib'
-import {
-  type Message,
-  type AnimationMixerExtended,
-  type LipSync,
-} from '../@types'
+import { type AnimationMixerExtended, type LipSync } from '../@types'
+import { useChat } from '../hooks/useChat'
 
 const AVATAR_FILE_PATH = '/models/657d84d7bfb427795ec76042.glb'
 const ANIMATIONS_FILE_PATH = '/models/animations.glb'
@@ -136,34 +133,56 @@ type GLTFResult = GLTF & {
   }
 }
 
-type Props = {
-  message: Message | null
+const lerpMorphTarget = (
+  scene: THREE.Group,
+  target: string,
+  value: number,
+  speed = 0.1
+) => {
+  scene.traverse((child: THREE.Object3D) => {
+    const skinnedMesh = child as THREE.SkinnedMesh
+    if (skinnedMesh.isSkinnedMesh && skinnedMesh.morphTargetDictionary) {
+      const index = skinnedMesh.morphTargetDictionary[target]
+      if (index != null && skinnedMesh.morphTargetInfluences) {
+        skinnedMesh.morphTargetInfluences[index] = THREE.MathUtils.lerp(
+          skinnedMesh.morphTargetInfluences[index],
+          value,
+          speed
+        )
+      }
+    }
+  })
 }
-export const Avatar: React.FC<Props> = ({ message }) => {
+
+export const Avatar: React.FC = () => {
+  const [lipSync, setLipSync] = useState<LipSync>()
   const { nodes, materials, scene } = useGLTF(AVATAR_FILE_PATH) as GLTFResult
-  const [lipsync, setLipsync] = useState<LipSync>()
+  const { animations } = useGLTF(ANIMATIONS_FILE_PATH)
+  const [animation, setAnimation] = useState(
+    animations.find((a) => a.name === 'Idle') ? 'Idle' : animations[0].name // Check if Idle animation exists otherwise use first animation
+  )
+  const group = useRef<THREE.Group>()
+  const { actions, mixer } = useAnimations(animations, group)
+  const [blink, setBlink] = useState(false)
+  const [facialExpression, setFacialExpression] =
+    useState<keyof typeof facialExpressions>('default')
+  const { aiAudio, setAiAudio: setAudio, message } = useChat()
 
   useEffect(() => {
-    console.log(message)
     if (!message) {
       setAnimation('Idle')
       return
     }
     setAnimation(message.animation)
     setFacialExpression(message.facialExpression)
-    setLipsync(message.lipsync)
+    setLipSync(message.lipSync)
     const audio = new Audio('data:audio/mp3;base64,' + message.audio)
+    audio.addEventListener('ended', () => setAudio(null))
     audio.play()
+
     setAudio(audio)
   }, [message])
 
-  const { animations } = useGLTF(ANIMATIONS_FILE_PATH)
-
-  const group = useRef<THREE.Group>()
-  const { actions, mixer } = useAnimations(animations, group)
-  const [animation, setAnimation] = useState(
-    animations.find((a) => a.name === 'Idle') ? 'Idle' : animations[0].name // Check if Idle animation exists otherwise use first animation
-  )
   useEffect(() => {
     const animationAction = actions[animation]
     const _mixer = mixer as AnimationMixerExtended
@@ -180,27 +199,6 @@ export const Avatar: React.FC<Props> = ({ message }) => {
     }
   }, [animation])
 
-  const lerpMorphTarget = (target: string, value: number, speed = 0.1) => {
-    scene.traverse((child: THREE.Object3D) => {
-      const skinnedMesh = child as THREE.SkinnedMesh
-      if (skinnedMesh.isSkinnedMesh && skinnedMesh.morphTargetDictionary) {
-        const index = skinnedMesh.morphTargetDictionary[target]
-        if (index != null && skinnedMesh.morphTargetInfluences) {
-          skinnedMesh.morphTargetInfluences[index] = THREE.MathUtils.lerp(
-            skinnedMesh.morphTargetInfluences[index],
-            value,
-            speed
-          )
-        }
-      }
-    })
-  }
-
-  const [blink, setBlink] = useState(false)
-  const [facialExpression, setFacialExpression] =
-    useState<keyof typeof facialExpressions>('default')
-  const [audio, setAudio] = useState<HTMLAudioElement>()
-
   useFrame(() => {
     Object.keys(nodes.EyeLeft.morphTargetDictionary ?? {}).forEach((key) => {
       const mapping = facialExpressions[facialExpression]
@@ -209,27 +207,27 @@ export const Avatar: React.FC<Props> = ({ message }) => {
       }
       const facialMapping = mapping as { [key: string]: number }
       if (facialMapping && facialMapping[key] != null) {
-        lerpMorphTarget(key, facialMapping[key], 0.1)
+        lerpMorphTarget(scene, key, facialMapping[key], 0.1)
       } else {
-        lerpMorphTarget(key, 0, 0.1)
+        lerpMorphTarget(scene, key, 0, 0.1)
       }
     })
 
-    lerpMorphTarget('eyeBlinkLeft', blink ? 1 : 0, 0.5)
-    lerpMorphTarget('eyeBlinkRight', blink ? 1 : 0, 0.5)
+    lerpMorphTarget(scene, 'eyeBlinkLeft', blink ? 1 : 0, 0.5)
+    lerpMorphTarget(scene, 'eyeBlinkRight', blink ? 1 : 0, 0.5)
 
     const appliedMorphTargets =
       [] as (typeof corresponding)[keyof typeof corresponding][]
-    if (message && lipsync && audio) {
-      const currentAudioTime = audio.currentTime
-      for (let i = 0; i < lipsync.mouthCues.length; i++) {
-        const mouthCue = lipsync.mouthCues[i]
+    if (message && lipSync && aiAudio) {
+      const currentAudioTime = aiAudio.currentTime
+      for (let i = 0; i < lipSync.mouthCues.length; i++) {
+        const mouthCue = lipSync.mouthCues[i]
         if (
           currentAudioTime >= mouthCue.start &&
           currentAudioTime <= mouthCue.end
         ) {
           appliedMorphTargets.push(corresponding[mouthCue.value])
-          lerpMorphTarget(corresponding[mouthCue.value], 1, 0.2)
+          lerpMorphTarget(scene, corresponding[mouthCue.value], 1, 0.2)
           break
         }
       }
@@ -239,7 +237,7 @@ export const Avatar: React.FC<Props> = ({ message }) => {
       if (appliedMorphTargets.includes(value)) {
         return
       }
-      lerpMorphTarget(value, 0, 0.1)
+      lerpMorphTarget(scene, value, 0, 0.1)
     })
   })
 

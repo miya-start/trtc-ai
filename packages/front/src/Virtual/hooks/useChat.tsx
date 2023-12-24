@@ -8,11 +8,13 @@ type Message = {
   animation: 'Idle' | 'Thinking' | 'Waving'
   audio: string
   facialExpression: 'angry' | 'sad' | 'smile' | 'surprised' | 'default'
-  lipsync: LipSync
+  lipSync: LipSync
   text: string
 }
 
 type ChatContextType = {
+  aiAudio: HTMLAudioElement | null
+  setAiAudio: React.Dispatch<React.SetStateAction<HTMLAudioElement | null>>
   loading: boolean
   message: Message | null
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
@@ -23,9 +25,10 @@ type ChatContextType = {
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [socket, setSocket] = useState<Socket | null>(null)
+  const [aiAudio, setAiAudio] = useState<HTMLAudioElement | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<Message | null>(null)
+  const [socket, setSocket] = useState<Socket | null>(null)
 
   useEffect(() => {
     if (socket) {
@@ -43,6 +46,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <ChatContext.Provider
       value={{
+        aiAudio,
+        setAiAudio,
         loading,
         message,
         setLoading,

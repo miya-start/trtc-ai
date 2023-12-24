@@ -2,12 +2,10 @@ import React from 'react'
 import { CameraControls, ContactShadows, Environment } from '@react-three/drei'
 import { useEffect, useRef } from 'react'
 import { Avatar } from './Avatar'
-import { useChat } from '../hooks/useChat'
 
 export const Experience: React.FC = () => {
   const cameraControlsRef = useRef<CameraControls | null>(null)
   const cameraZoomed = true
-  const { message } = useChat()
 
   useEffect(() => {
     cameraControlsRef.current?.setLookAt(0, 2, 5, 0, 1.5, 0)
@@ -24,7 +22,7 @@ export const Experience: React.FC = () => {
     <>
       <CameraControls ref={cameraControlsRef} />
       <Environment preset="warehouse" />
-      <Avatar message={message} />
+      <Avatar />
       <ContactShadows opacity={0.7} />
     </>
   )

@@ -21,7 +21,7 @@ export function insertCaption(
   ]
 }
 
-export function useDeleteCaption({
+export function useCaptionDeletion({
   captionTexts,
   setCaptionTexts,
 }: {
@@ -39,13 +39,15 @@ export function useDeleteCaption({
   }, [captionTexts, setCaptionTexts])
 }
 
-export function useEmitCaption({
+export function useCaptionEmission({
+  aiAudio,
   finalTranscript,
   setCaptionTexts,
   socket,
   transcript,
   userId,
 }: {
+  aiAudio: HTMLAudioElement | null
   finalTranscript: string | null
   setCaptionTexts: React.Dispatch<React.SetStateAction<MessageToSend[]>>
   socket: Socket | null
@@ -55,6 +57,7 @@ export function useEmitCaption({
   const isSpeechEnded = useRef(false)
 
   useEffect(() => {
+    if (aiAudio) return
     if (!socket?.connected || !transcript) return
 
     const isEnded = isSpeechEnded.current
