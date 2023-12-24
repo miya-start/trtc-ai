@@ -8,18 +8,19 @@ const messageSchema = z.object({
 })
 export type ChatMessage = z.infer<typeof messageSchema> & {
   time: number
+  userId: string
 }
 
 export async function chat({
-  hr,
   openai,
   transcript,
-  user,
+  userId,
+  hr = '面接AI',
 }: {
-  hr: string
   openai: OpenAI
   transcript: string
-  user: string
+  userId: string
+  hr?: string
 }): Promise<ChatMessage> {
   const completion = await openai.chat.completions.create({
     model: 'gpt-3.5-turbo',
@@ -29,11 +30,11 @@ export async function chat({
       {
         role: 'system',
         content: `
-          HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=React技術力チェック; Process=HR質問→User回答→HR追加質問; Repeat=技術力確認まで繰り返し; user称呼=${user}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required; 質問は簡潔に`,
+          HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=React技術力チェック; Process=HR質問→User回答→HR追加質問; Repeat=技術力確認まで繰り返し; user称呼=${userId}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required; 質問は簡潔に`,
       },
       {
         role: 'assistant',
-        content: `{"text":"こんにちは、${user}さん。${hr}と申します。よろしくお願いします。","facialExpression":"smile","animation":"Idle"}`,
+        content: `{"text":"こんにちは、${userId}さん。${hr}と申します。よろしくお願いします。","facialExpression":"smile","animation":"Idle"}`,
       },
       {
         role: 'user',
@@ -47,5 +48,5 @@ export async function chat({
   if (!zodParsed.success) {
     throw new Error(`Invalid message: ${JSON.stringify(zodParsed.error)}`)
   }
-  return { ...zodParsed.data, time: Date.now() }
+  return { ...zodParsed.data, time: Date.now(), userId: hr }
 }

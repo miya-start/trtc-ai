@@ -41,19 +41,15 @@ io.on('connection', async (socket) => {
       socket,
     })
 
-    const hr = '面接AI'
-    const user = '宮下'
-
-    const { isEnd, transcript } = sendMessage
+    const { isEnd, transcript, userId } = sendMessage
     if (!isEnd) return
     const message = await chat({
-      hr,
       openai,
       transcript,
-      user,
+      userId,
     })
     const messageWithAudio = await voice(message, openai)
-    socket.emit('ai-audio', { ...messageWithAudio, userId: hr })
+    socket.emit('ai-audio', { ...messageWithAudio })
   })
 
   socket.on('disconnect', () => {

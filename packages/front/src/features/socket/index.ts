@@ -17,7 +17,7 @@ const handleSocket = ({
   socket.on('receive-message', (data: MessageToSend) => {
     console.log('receive-message', data)
     setCaptionTexts((prevs: MessageToSend[]) =>
-      insertCaption(prevs, { ...data }, data.userId)
+      insertCaption(prevs, { ...data })
     )
   })
 }
