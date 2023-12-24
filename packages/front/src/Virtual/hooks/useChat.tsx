@@ -1,58 +1,53 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { type LipSync, messageSchema } from '../@types'
+import { Socket } from 'socket.io-client'
 
-const BACKEND_URL = 'http://localhost:3000'
 const ChatContext = createContext<ChatContextType>({} as ChatContextType)
 
 type Message = {
-  facialExpression: 'angry' | 'sad' | 'smile' | 'surprised' | 'default'
   animation: 'Idle' | 'Thinking' | 'Waving'
   audio: string
+  facialExpression: 'angry' | 'sad' | 'smile' | 'surprised' | 'default'
   lipsync: LipSync
   text: string
 }
 
 type ChatContextType = {
-  cameraZoomed: boolean
-  chat: (message: string) => void
-  message: Message | null
   loading: boolean
-  setCameraZoomed: (cameraZoomed: boolean) => void
+  message: Message | null
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setSocket: React.Dispatch<React.SetStateAction<Socket | null>>
+  socket: Socket | null
 }
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const chat = async (message: string) => {
-    setLoading(true)
-    const data = await fetch(`${BACKEND_URL}/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message }),
-    })
-    const resp = await data.json()
-    const parsed = messageSchema.safeParse(resp.message)
-    if (!parsed.success) {
-      throw new Error('Failed to parse message')
-    }
-
-    setMessage(parsed.data)
-    setLoading(false)
-  }
-  const [message, setMessage] = useState<Message | null>(null)
+  const [socket, setSocket] = useState<Socket | null>(null)
   const [loading, setLoading] = useState(false)
-  const [cameraZoomed, setCameraZoomed] = useState(true)
+  const [message, setMessage] = useState<Message | null>(null)
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('ai-audio', (message: Message) => {
+        console.log('ai-audio', message)
+        const parsed = messageSchema.safeParse(message)
+        if (!parsed.success) throw Error('Failed to parse message')
+
+        setMessage(parsed.data)
+        setLoading(false)
+      })
+    }
+  }, [socket])
 
   return (
     <ChatContext.Provider
       value={{
-        chat,
-        message,
         loading,
-        cameraZoomed,
-        setCameraZoomed,
+        message,
+        setLoading,
+        setSocket,
+        socket,
       }}
     >
       {children}

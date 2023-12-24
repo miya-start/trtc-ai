@@ -9,8 +9,11 @@ import { useFrame } from '@react-three/fiber'
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTF } from 'three-stdlib'
-import { type AnimationMixerExtended, type LipSync } from '../@types'
-import { useChat } from '../hooks/useChat'
+import {
+  type Message,
+  type AnimationMixerExtended,
+  type LipSync,
+} from '../@types'
 
 const AVATAR_FILE_PATH = '/models/657d84d7bfb427795ec76042.glb'
 const ANIMATIONS_FILE_PATH = '/models/animations.glb'
@@ -108,7 +111,6 @@ const corresponding = {
   X: 'viseme_PP',
 } as const
 
-type AvatarProps = JSX.IntrinsicElements['group']
 type GLTFResult = GLTF & {
   nodes: {
     Hips: THREE.SkinnedMesh
@@ -133,9 +135,12 @@ type GLTFResult = GLTF & {
     Wolf3D_Teeth: THREE.MeshStandardMaterial
   }
 }
-export const Avatar: React.FC<AvatarProps> = (props) => {
+
+type Props = {
+  message: Message | null
+}
+export const Avatar: React.FC<Props> = ({ message }) => {
   const { nodes, materials, scene } = useGLTF(AVATAR_FILE_PATH) as GLTFResult
-  const { message } = useChat()
   const [lipsync, setLipsync] = useState<LipSync>()
 
   useEffect(() => {
@@ -254,7 +259,7 @@ export const Avatar: React.FC<AvatarProps> = (props) => {
   }, [])
 
   return (
-    <group {...props} ref={group as React.RefObject<THREE.Group>}>
+    <group ref={group as React.RefObject<THREE.Group>}>
       <primitive object={nodes.Hips} />
       <skinnedMesh
         name="Wolf3D_Body"

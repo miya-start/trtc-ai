@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer'
 import { useEffect } from 'react'
 import SpeechRecognition from 'react-speech-recognition'
 import { io, Socket } from 'socket.io-client'
@@ -20,13 +19,6 @@ const handleSocket = ({
     setCaptionTexts((prevs: MessageToSend[]) =>
       insertCaption(prevs, { ...data }, data.userId)
     )
-  })
-
-  socket.on('ai-audio', (data: string) => {
-    const byteArray = Buffer.from(data, 'base64')
-    const audioBlob = new Blob([byteArray], { type: 'audio/x-wav' })
-    const audio = new Audio(URL.createObjectURL(audioBlob))
-    audio.play()
   })
 }
 

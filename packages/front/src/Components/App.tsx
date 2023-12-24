@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import 'regenerator-runtime' // for the bug of react-speech-recognition
 import { useSpeechRecognition } from 'react-speech-recognition'
-import { type Socket } from 'socket.io-client'
 import { type Client, type LocalStream } from 'trtc-js-sdk'
 import { useEmitCaption, useDeleteCaption } from '../features/caption'
 import {
@@ -16,6 +15,7 @@ import { Controls } from './Controls'
 import { Setting } from './Setting'
 import { Stream } from './Stream'
 import { VirtualWithProvider } from '../Virtual'
+import { useChat } from '../Virtual/hooks/useChat'
 
 const App: React.FC = () => {
   const {
@@ -32,8 +32,8 @@ const App: React.FC = () => {
   const [microphoneId, setMicrophoneId] = useState<string | null>(null)
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
-  const [socket, setSocket] = useState<Socket | null>(null)
   const [userId, setUserId] = useState('')
+  const { socket, setSocket } = useChat()
 
   const startCall = useCallback(() => {
     startStream({

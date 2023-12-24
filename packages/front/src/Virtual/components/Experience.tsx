@@ -1,47 +1,13 @@
 import React from 'react'
-import {
-  CameraControls,
-  ContactShadows,
-  Environment,
-  Text,
-} from '@react-three/drei'
-import { Suspense, useEffect, useRef, useState } from 'react'
-import { useChat } from '../hooks/useChat'
+import { CameraControls, ContactShadows, Environment } from '@react-three/drei'
+import { useEffect, useRef } from 'react'
 import { Avatar } from './Avatar'
+import { useChat } from '../hooks/useChat'
 
-type DotsProps = JSX.IntrinsicElements['group']
-const Dots: React.FC<DotsProps> = (props) => {
-  const { loading } = useChat()
-  const [loadingText, setLoadingText] = useState('')
-  useEffect(() => {
-    if (loading) {
-      const interval = setInterval(() => {
-        setLoadingText((loadingText) => {
-          if (loadingText.length > 2) {
-            return '.'
-          }
-          return loadingText + '.'
-        })
-      }, 800)
-      return () => clearInterval(interval)
-    } else {
-      return setLoadingText('')
-    }
-  }, [loading])
-  if (!loading) return null
-  return (
-    <group {...props}>
-      <Text fontSize={0.14} anchorX={'left'} anchorY={'bottom'}>
-        {loadingText}
-        <meshBasicMaterial color="black" />
-      </Text>
-    </group>
-  )
-}
-
-export const Experience = () => {
+export const Experience: React.FC = () => {
   const cameraControlsRef = useRef<CameraControls | null>(null)
-  const { cameraZoomed } = useChat()
+  const cameraZoomed = true
+  const { message } = useChat()
 
   useEffect(() => {
     cameraControlsRef.current?.setLookAt(0, 2, 5, 0, 1.5, 0)
@@ -58,11 +24,7 @@ export const Experience = () => {
     <>
       <CameraControls ref={cameraControlsRef} />
       <Environment preset="warehouse" />
-      {/* Wrapping Dots into Suspense to prevent Blink when Troika/Font is loaded */}
-      <Suspense>
-        <Dots position-y={1.75} position-x={-0.02} />
-      </Suspense>
-      <Avatar />
+      <Avatar message={message} />
       <ContactShadows opacity={0.7} />
     </>
   )
