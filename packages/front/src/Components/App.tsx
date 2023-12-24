@@ -63,7 +63,8 @@ const App: React.FC = () => {
   }, [client, localStream, socket])
 
   useEffect(() => {
-    if (socket?.connected) socket.emit('join-room', `${roomId}`)
+    if (socket?.connected)
+      socket.emit('join-room', { roomId, time: Date.now(), userId })
   }, [socket?.connected])
 
   useSpeechRecognitionStart(isMuted, listening, localStream)

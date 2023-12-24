@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 import path from 'path'
 import { Server } from 'socket.io'
 import { emitMessage, type MessageReceived } from './features/socket/index.js'
-import { chat } from './features/ai-chat/index.js'
+import { chat, initialMessage } from './features/ai-chat/index.js'
 import { voice } from './features/ai-voice/index.js'
 
 if (process.env.NODE_ENV !== 'production')
@@ -28,10 +28,23 @@ io.on('connection', async (socket) => {
   let roomId = '0'
   console.log(`connect ${socket.id}`)
 
-  socket.on('join-room', (iroomId: string) => {
-    socket.join(iroomId)
-    roomId = iroomId
-  })
+  socket.on(
+    'join-room',
+    async ({
+      roomId: iroomId,
+      userId,
+    }: {
+      roomId: string
+      time: number
+      userId: string
+    }) => {
+      socket.join(iroomId)
+      roomId = iroomId
+
+      const messageWithAudio = await voice(initialMessage(userId), openai)
+      socket.emit('ai-audio', messageWithAudio)
+    }
+  )
 
   socket.on('send-message', async (sendMessage: MessageReceived) => {
     console.log(`send-message ${socket.id} ${sendMessage.transcript}`)
@@ -49,7 +62,7 @@ io.on('connection', async (socket) => {
       userId,
     })
     const messageWithAudio = await voice(message, openai)
-    socket.emit('ai-audio', { ...messageWithAudio })
+    socket.emit('ai-audio', messageWithAudio)
   })
 
   socket.on('disconnect', () => {

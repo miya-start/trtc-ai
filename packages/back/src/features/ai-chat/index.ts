@@ -1,6 +1,8 @@
 import type OpenAI from 'openai'
 import z from 'zod'
 
+const AI = '面接AI'
+
 const messageSchema = z.object({
   animation: z.enum(['Idle', 'Thinking', 'Waving']),
   facialExpression: z.enum(['angry', 'sad', 'smile', 'surprised', 'default']),
@@ -10,6 +12,14 @@ export type ChatMessage = z.infer<typeof messageSchema> & {
   time: number
   userId: string
 }
+
+export const initialMessage = (userId: string, hr = AI): ChatMessage => ({
+  text: `こんにちは、${userId}さん。${hr}と申します。よろしくお願いします。`,
+  animation: 'Idle',
+  facialExpression: 'smile',
+  time: Date.now(),
+  userId: hr,
+})
 
 export async function chat({
   openai,
