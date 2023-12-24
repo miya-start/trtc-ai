@@ -1,63 +1,58 @@
-import { createServer } from 'http'
-import path from 'path'
+import cors from 'cors'
 import dotenv from 'dotenv'
 import express from 'express'
-import { Server, Socket } from 'socket.io'
-import { createAudio } from './features/ai-voice/workflow.js'
+import { createServer } from 'http'
+import OpenAI from 'openai'
+import path from 'path'
+import { Server } from 'socket.io'
+import { emitMessage, type MessageReceived } from './features/socket/index.js'
+import { chat } from './features/ai-chat/index.js'
+import { voice } from './features/ai-voice/index.js'
 
-const audioResultAsync = createAudio('hello world')
-
-type MessageReceived = {
-  transcript: string
-  time: number
-  userId: string
-}
-
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production')
   dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
-}
+
+if (!process.env.OPENAI_API_KEY) throw Error('OPENAI_API_KEY is not defined')
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 const app = express()
+const port = 3004
+app.use(cors())
 const httpServer = createServer(app)
 const io = new Server(httpServer)
-
-async function emitMessage({
-  message,
-  roomId,
-  socket,
-}: {
-  message: MessageReceived
-  roomId: string
-  socket: Socket
-}): Promise<void> {
-  socket.to(roomId).emit('receive-message', message)
-}
 
 io.on('connection', async (socket) => {
   let roomId = '0'
   console.log(`connect ${socket.id}`)
-
-  const audioResult = await audioResultAsync
-  if (audioResult.isErr()) {
-    console.error(audioResult.error)
-    return
-  }
 
   socket.on('join-room', (iroomId: string) => {
     socket.join(iroomId)
     roomId = iroomId
   })
 
-  socket.on('send-message', async (message: MessageReceived) => {
-    console.log(`send-message ${socket.id} ${message.transcript}`)
+  socket.on('send-message', async (sendMessage: MessageReceived) => {
+    console.log(`send-message ${socket.id} ${sendMessage.transcript}`)
     emitMessage({
-      message,
+      message: sendMessage,
       roomId,
       socket,
     })
 
-    console.log('audioResult.value', audioResult.value)
-    socket.emit('ai-audio', audioResult.value)
+    const hr = '鈴木'
+    const user = '田中'
+
+    const message = await chat({
+      hr,
+      openai,
+      transcript: sendMessage.transcript,
+      user,
+    })
+    const messageWithAudio = await voice(message, openai)
+
+    socket.emit('ai-audio', messageWithAudio)
   })
 
   socket.on('disconnect', () => {
@@ -65,6 +60,6 @@ io.on('connection', async (socket) => {
   })
 })
 
-httpServer.listen(3004, () => {
-  console.log('Listening on port 3004!')
+httpServer.listen(port, () => {
+  console.log(`Virtual Girlfriend listening on port ${port}`)
 })
