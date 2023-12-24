@@ -2,14 +2,13 @@ import React, { useCallback, useEffect, useState } from 'react'
 import 'regenerator-runtime' // for the bug of react-speech-recognition
 import { useSpeechRecognition } from 'react-speech-recognition'
 import { type Client, type LocalStream } from 'trtc-js-sdk'
-import { useCaptionEmission, useCaptionDeletion } from '../features/caption'
+import { useCaptionEmission } from '../features/caption'
 import {
   startSocket,
   finishSocket,
   useSpeechRecognitionStart,
 } from '../features/socket'
 import { startStream, finishStream, useSwitchDevice } from '../features/stream'
-import { type MessageToSend } from '../types'
 import { Captions } from './Caption'
 import { Controls } from './Controls'
 import { Setting } from './Setting'
@@ -24,7 +23,6 @@ const App: React.FC = () => {
     listening,
     transcript,
   } = useSpeechRecognition()
-  const [captionTexts, setCaptionTexts] = useState<MessageToSend[]>([])
   const [client, setClient] = useState<Client | null>(null)
   const [cameraId, setCameraId] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
@@ -33,7 +31,7 @@ const App: React.FC = () => {
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [userId, setUserId] = useState('')
-  const { aiAudio, socket, setSocket } = useChat()
+  const { aiAudio, setCaptionTexts, socket, setSocket } = useChat()
 
   const startCall = useCallback(() => {
     startStream({
@@ -79,7 +77,6 @@ const App: React.FC = () => {
     transcript,
     userId,
   })
-  useCaptionDeletion({ captionTexts, setCaptionTexts })
 
   return (
     <div className="grid grid-rows-[1fr,6rem] h-screen min-h-screen bg-gray-800">
@@ -99,7 +96,7 @@ const App: React.FC = () => {
       <div className={isConnected ? 'relative flex justify-center' : 'hidden'}>
         <Stream />
         <VirtualWithProvider />
-        <Captions captionTexts={captionTexts} />
+        <Captions />
       </div>
       <div
         className={

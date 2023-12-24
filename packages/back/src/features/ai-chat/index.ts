@@ -6,7 +6,9 @@ const messageSchema = z.object({
   facialExpression: z.enum(['angry', 'sad', 'smile', 'surprised', 'default']),
   text: z.string(),
 })
-export type ChatMessage = z.infer<typeof messageSchema>
+export type ChatMessage = z.infer<typeof messageSchema> & {
+  time: number
+}
 
 export async function chat({
   hr,
@@ -27,7 +29,7 @@ export async function chat({
       {
         role: 'system',
         content: `
-          HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=React技術力チェック; Process=HR質問→User回答→HR追加質問; Repeat=技術力確認まで繰り返し; user称呼=${user}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required`,
+          HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=React技術力チェック; Process=HR質問→User回答→HR追加質問; Repeat=技術力確認まで繰り返し; user称呼=${user}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required; 質問は簡潔に`,
       },
       {
         role: 'assistant',
@@ -45,5 +47,5 @@ export async function chat({
   if (!zodParsed.success) {
     throw new Error(`Invalid message: ${JSON.stringify(zodParsed.error)}`)
   }
-  return zodParsed.data
+  return { ...zodParsed.data, time: Date.now() }
 }

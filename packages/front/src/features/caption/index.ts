@@ -7,10 +7,9 @@ export const DELETION_INTERVAL = 4000
 export function insertCaption(
   prevs: MessageToSend[],
   next: MessageToSend,
-  userId: string,
   isSpeechEnded = false
 ): MessageToSend[] {
-  const index = prevs.findLastIndex((prev) => prev.userId === userId)
+  const index = prevs.findLastIndex((prev) => prev.userId === next.userId)
   if (index === -1) return [...prevs, next]
 
   const newCaptionIndex = isSpeechEnded ? index + 1 : index
@@ -73,12 +72,12 @@ export function useCaptionEmission({
       time: Date.now(),
     }
     setCaptionTexts((prevs: MessageToSend[]) =>
-      insertCaption(prevs, caption, userId, isEnded)
+      insertCaption(prevs, caption, isEnded)
     )
     socket.emit('send-message', {
       ...caption,
       transcript: finalTranscript || transcript.replace(/\s\S*$/, ''),
       isEnd: !!finalTranscript,
     })
-  }, [finalTranscript, socket?.connected, transcript])
+  }, [aiAudio, finalTranscript, socket?.connected, transcript])
 }

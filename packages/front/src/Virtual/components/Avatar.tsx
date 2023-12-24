@@ -11,6 +11,8 @@ import * as THREE from 'three'
 import { GLTF } from 'three-stdlib'
 import { type AnimationMixerExtended, type LipSync } from '../@types'
 import { useChat } from '../hooks/useChat'
+import { MessageToSend } from '../../types'
+import { insertCaption } from '../../features/caption'
 
 const AVATAR_FILE_PATH = '/models/657d84d7bfb427795ec76042.glb'
 const ANIMATIONS_FILE_PATH = '/models/animations.glb'
@@ -166,21 +168,40 @@ export const Avatar: React.FC = () => {
   const [blink, setBlink] = useState(false)
   const [facialExpression, setFacialExpression] =
     useState<keyof typeof facialExpressions>('default')
-  const { aiAudio, setAiAudio: setAudio, message } = useChat()
+  const { aiAudio, setAiAudio, setCaptionTexts, message } = useChat()
 
   useEffect(() => {
     if (!message) {
       setAnimation('Idle')
       return
     }
-    setAnimation(message.animation)
-    setFacialExpression(message.facialExpression)
-    setLipSync(message.lipSync)
+    const {
+      animation,
+      facialExpression,
+      lipSync,
+      text: transcript,
+      time,
+      userId,
+    } = message
+    setAnimation(animation)
+    setFacialExpression(facialExpression)
+    setLipSync(lipSync)
     const audio = new Audio('data:audio/mp3;base64,' + message.audio)
-    audio.addEventListener('ended', () => setAudio(null))
+    audio.addEventListener('ended', () => setAiAudio(null))
     audio.play()
+    setAiAudio(audio)
 
-    setAudio(audio)
+    setCaptionTexts((prevs: MessageToSend[]) =>
+      insertCaption(
+        prevs,
+        {
+          transcript,
+          time,
+          userId,
+        },
+        true
+      )
+    )
   }, [message])
 
   useEffect(() => {

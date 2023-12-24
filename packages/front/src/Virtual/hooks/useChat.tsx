@@ -1,31 +1,28 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { type LipSync, messageSchema } from '../@types'
+import { type Message, messageSchema } from '../@types'
 import { Socket } from 'socket.io-client'
+import { MessageToSend } from '../../types'
+import { useCaptionDeletion } from '../../features/caption'
 
 const ChatContext = createContext<ChatContextType>({} as ChatContextType)
-
-type Message = {
-  animation: 'Idle' | 'Thinking' | 'Waving'
-  audio: string
-  facialExpression: 'angry' | 'sad' | 'smile' | 'surprised' | 'default'
-  lipSync: LipSync
-  text: string
-}
 
 type ChatContextType = {
   aiAudio: HTMLAudioElement | null
   setAiAudio: React.Dispatch<React.SetStateAction<HTMLAudioElement | null>>
+  captionTexts: MessageToSend[]
+  setCaptionTexts: React.Dispatch<React.SetStateAction<MessageToSend[]>>
   loading: boolean
   message: Message | null
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  setSocket: React.Dispatch<React.SetStateAction<Socket | null>>
   socket: Socket | null
+  setSocket: React.Dispatch<React.SetStateAction<Socket | null>>
 }
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [aiAudio, setAiAudio] = useState<HTMLAudioElement | null>(null)
+  const [captionTexts, setCaptionTexts] = useState<MessageToSend[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<Message | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
@@ -43,16 +40,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [socket])
 
+  useCaptionDeletion({ captionTexts, setCaptionTexts })
+
   return (
     <ChatContext.Provider
       value={{
         aiAudio,
+        captionTexts,
+        setCaptionTexts,
         setAiAudio,
         loading,
         message,
         setLoading,
-        setSocket,
         socket,
+        setSocket,
       }}
     >
       {children}
