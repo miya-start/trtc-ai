@@ -13,7 +13,7 @@ import { Captions } from './Caption'
 import { Controls } from './Controls'
 import { Setting } from './Setting'
 import { Stream } from './Stream'
-import { VirtualWithProvider } from '../Virtual'
+import { Virtual } from '../Virtual'
 import { useChat } from '../Virtual/hooks/useChat'
 
 const App: React.FC = () => {
@@ -96,7 +96,7 @@ const App: React.FC = () => {
       </div>
       <div className={isConnected ? 'relative flex justify-center' : 'hidden'}>
         <Stream />
-        <VirtualWithProvider />
+        <Virtual />
         <Captions />
       </div>
       <div
