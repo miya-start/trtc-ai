@@ -163,12 +163,13 @@ export const Avatar: React.FC = () => {
   const [animation, setAnimation] = useState(
     animations.find((a) => a.name === 'Idle') ? 'Idle' : animations[0].name // Check if Idle animation exists otherwise use first animation
   )
+  const [audio, setAudio] = useState<HTMLAudioElement>(new Audio())
+  const [blink, setBlink] = useState(false)
   const group = useRef<THREE.Group>()
   const { actions, mixer } = useAnimations(animations, group)
-  const [blink, setBlink] = useState(false)
   const [facialExpression, setFacialExpression] =
     useState<keyof typeof facialExpressions>('default')
-  const { aiAudio, setAiAudio, setCaptionTexts, message } = useChat()
+  const { setCaptionTexts, message, setMessage } = useChat()
 
   useEffect(() => {
     if (!message) {
@@ -187,9 +188,11 @@ export const Avatar: React.FC = () => {
     setFacialExpression(facialExpression)
     setLipSync(lipSync)
     const audio = new Audio('data:audio/mp3;base64,' + message.audio)
-    audio.addEventListener('ended', () => setAiAudio(null))
+    audio.addEventListener('ended', () =>
+      setTimeout(() => setMessage(null), 500)
+    )
     audio.play()
-    setAiAudio(audio)
+    setAudio(audio)
 
     setCaptionTexts((prevs: MessageToSend[]) =>
       insertCaption(
@@ -239,8 +242,8 @@ export const Avatar: React.FC = () => {
 
     const appliedMorphTargets =
       [] as (typeof corresponding)[keyof typeof corresponding][]
-    if (message && lipSync && aiAudio) {
-      const currentAudioTime = aiAudio.currentTime
+    if (message && lipSync) {
+      const currentAudioTime = audio.currentTime
       for (let i = 0; i < lipSync.mouthCues.length; i++) {
         const mouthCue = lipSync.mouthCues[i]
         if (

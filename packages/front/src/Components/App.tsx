@@ -31,7 +31,7 @@ const App: React.FC = () => {
   const [localStream, setLocalStream] = useState<LocalStream | null>(null)
   const [roomId, setRoomId] = useState(1)
   const [userId, setUserId] = useState('')
-  const { aiAudio, setCaptionTexts, socket, setSocket } = useChat()
+  const { message, setCaptionTexts, socket, setSocket } = useChat()
 
   const startCall = useCallback(() => {
     startStream({
@@ -71,8 +71,8 @@ const App: React.FC = () => {
   useSwitchDevice({ localStream, cameraId, microphoneId })
 
   useCaptionEmission({
-    aiAudio,
-    finalTranscript,
+    finalTranscript: finalTranscript ?? '',
+    aiTranscript: message?.text ?? '',
     setCaptionTexts,
     socket,
     transcript,

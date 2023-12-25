@@ -7,12 +7,11 @@ import { useCaptionDeletion } from '../../features/caption'
 const ChatContext = createContext<ChatContextType>({} as ChatContextType)
 
 type ChatContextType = {
-  aiAudio: HTMLAudioElement | null
-  setAiAudio: React.Dispatch<React.SetStateAction<HTMLAudioElement | null>>
   captionTexts: MessageToSend[]
   setCaptionTexts: React.Dispatch<React.SetStateAction<MessageToSend[]>>
   loading: boolean
   message: Message | null
+  setMessage: React.Dispatch<React.SetStateAction<Message | null>>
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
   socket: Socket | null
   setSocket: React.Dispatch<React.SetStateAction<Socket | null>>
@@ -21,7 +20,6 @@ type ChatContextType = {
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [aiAudio, setAiAudio] = useState<HTMLAudioElement | null>(null)
   const [captionTexts, setCaptionTexts] = useState<MessageToSend[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<Message | null>(null)
@@ -45,12 +43,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <ChatContext.Provider
       value={{
-        aiAudio,
         captionTexts,
         setCaptionTexts,
-        setAiAudio,
         loading,
         message,
+        setMessage,
         setLoading,
         socket,
         setSocket,

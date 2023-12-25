@@ -39,15 +39,15 @@ export function useCaptionDeletion({
 }
 
 export function useCaptionEmission({
-  aiAudio,
   finalTranscript,
+  aiTranscript,
   setCaptionTexts,
   socket,
   transcript,
   userId,
 }: {
-  aiAudio: HTMLAudioElement | null
-  finalTranscript: string | null
+  finalTranscript: string
+  aiTranscript: string
   setCaptionTexts: React.Dispatch<React.SetStateAction<MessageToSend[]>>
   socket: Socket | null
   transcript: string
@@ -56,7 +56,8 @@ export function useCaptionEmission({
   const isSpeechEnded = useRef(false)
 
   useEffect(() => {
-    if (aiAudio) return
+    console.log('aiTranscript', aiTranscript)
+    if (aiTranscript) return
     if (!socket?.connected || !transcript) return
 
     const isEnded = isSpeechEnded.current
@@ -79,5 +80,5 @@ export function useCaptionEmission({
       transcript: finalTranscript || transcript.replace(/\s\S*$/, ''),
       isEnd: !!finalTranscript,
     })
-  }, [aiAudio, finalTranscript, socket?.connected, transcript])
+  }, [aiTranscript, finalTranscript, socket?.connected, transcript])
 }
