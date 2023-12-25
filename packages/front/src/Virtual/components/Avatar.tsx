@@ -12,7 +12,7 @@ import { GLTF } from 'three-stdlib'
 import { type AnimationMixerExtended, type LipSync } from '../@types'
 import { useChat } from '../hooks/useChat'
 import { MessageToSend } from '../../types'
-import { insertCaption } from '../../features/caption'
+import { insertCaption, popCaption } from '../../features/caption'
 
 const AVATAR_FILE_PATH = '/models/657d84d7bfb427795ec76042.glb'
 const ANIMATIONS_FILE_PATH = '/models/animations.glb'
@@ -156,6 +156,18 @@ const lerpMorphTarget = (
   })
 }
 
+const onAudioEnded = () => {
+  console.log('Playback has ended.')
+}
+
+const stopAudio = (audio: HTMLAudioElement) => {
+  if (audio) {
+    audio.pause()
+    audio.currentTime = 0
+    audio.removeEventListener('ended', onAudioEnded)
+  }
+}
+
 export const Avatar: React.FC = () => {
   const [lipSync, setLipSync] = useState<LipSync>()
   const { nodes, materials, scene } = useGLTF(AVATAR_FILE_PATH) as GLTFResult
@@ -176,35 +188,44 @@ export const Avatar: React.FC = () => {
       setAnimation('Idle')
       return
     }
+    if (message) {
+      stopAudio(audio)
+      popCaption({ setCaptionTexts, userId: message.userId })
+    }
+
     const {
       animation,
       facialExpression,
       lipSync,
       text: transcript,
-      time,
       userId,
     } = message
     setAnimation(animation)
     setFacialExpression(facialExpression)
     setLipSync(lipSync)
-    const audio = new Audio('data:audio/mp3;base64,' + message.audio)
-    audio.addEventListener('ended', () =>
+    const newAudio = new Audio('data:audio/mp3;base64,' + message.audio)
+    newAudio.addEventListener('ended', () =>
       setTimeout(() => setMessage(null), 1000)
     )
-    audio.play()
-    setAudio(audio)
+    newAudio.play()
+    setAudio(newAudio)
 
     setCaptionTexts((prevs: MessageToSend[]) =>
       insertCaption(
         prevs,
         {
+          role: 'assistant',
           transcript,
-          time,
+          time: Date.now(),
           userId,
         },
         true
       )
     )
+
+    return () => {
+      stopAudio(newAudio)
+    }
   }, [message])
 
   useEffect(() => {

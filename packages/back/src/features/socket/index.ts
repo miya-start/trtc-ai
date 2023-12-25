@@ -2,6 +2,7 @@ import { Socket } from 'socket.io'
 
 export type MessageReceived = {
   isEnd: boolean
+  role: 'system' | 'assistant' | 'user'
   transcript: string
   time: number
   userId: string

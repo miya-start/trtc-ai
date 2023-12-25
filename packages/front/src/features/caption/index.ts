@@ -20,6 +20,20 @@ export function insertCaption(
   ]
 }
 
+export function popCaption({
+  setCaptionTexts,
+  userId,
+}: {
+  setCaptionTexts: React.Dispatch<React.SetStateAction<MessageToSend[]>>
+  userId: string
+}) {
+  setCaptionTexts((prevs) => {
+    const lastIndex = prevs.findLastIndex((prev) => prev.userId === userId)
+    if (lastIndex === -1) return prevs
+    return [...prevs.slice(0, lastIndex), ...prevs.slice(lastIndex + 1)]
+  })
+}
+
 export function useCaptionDeletion({
   captionTexts,
   setCaptionTexts,
@@ -68,10 +82,11 @@ export function useCaptionEmission({
     }
 
     const caption = {
+      role: 'user',
       transcript,
       userId,
       time: Date.now(),
-    }
+    } satisfies MessageToSend
     setCaptionTexts((prevs: MessageToSend[]) =>
       insertCaption(prevs, caption, isEnded)
     )
@@ -79,6 +94,7 @@ export function useCaptionEmission({
       ...caption,
       transcript: finalTranscript || transcript.replace(/\s\S*$/, ''),
       isEnd: !!finalTranscript,
+      role: 'user',
     })
   }, [aiTranscript, finalTranscript, socket?.connected, transcript])
 }

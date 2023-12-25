@@ -21,9 +21,13 @@ const lipSyncMessage = async () => {
     // -y to overwrite the file
   )
   console.log(`Conversion done in ${new Date().getTime() - time}ms`)
-  await execCommand(
-    `./bin/rhubarb -f json -o audios/message.json audios/message.wav -r phonetic`
-  )
+  try {
+    await execCommand(
+      `./bin/rhubarb -f json -o audios/message.json audios/message.wav -r phonetic`
+    )
+  } catch (error) {
+    lipSyncMessage()
+  }
   // -r phonetic is faster but less accurate
   console.log(`Lip sync done in ${new Date().getTime() - time}ms`)
 }
