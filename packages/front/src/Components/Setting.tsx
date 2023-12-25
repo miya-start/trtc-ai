@@ -30,7 +30,7 @@ export const Setting: React.FC<{
       <div className="p-6 bg-gray-700 text-white">
         <div className="mb-6">
           <label htmlFor="userId" className="block mb-2 text-sm font-medium">
-            User Name:
+            ユーザー:
           </label>
           <input
             type="text"
@@ -44,16 +44,11 @@ export const Setting: React.FC<{
           />
         </div>
         <div className="mb-6">
-          <label htmlFor="language" className="block mb-2 text-sm font-medium">
-            Language:
-          </label>
-        </div>
-        <div className="mb-6">
           <label
             htmlFor="cameraSelect"
             className="block mb-2 text-sm font-medium"
           >
-            Camera:
+            カメラ:
           </label>
           <select
             id="cameraSelect"
@@ -74,7 +69,7 @@ export const Setting: React.FC<{
             htmlFor="microphoneSelect"
             className="block mb-2 text-sm font-medium"
           >
-            Microphone:
+            マイク:
           </label>
           <select
             id="microphoneSelect"

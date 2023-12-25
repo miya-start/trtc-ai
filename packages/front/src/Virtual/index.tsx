@@ -5,7 +5,11 @@ import { Experience } from './components/Experience'
 
 export const Virtual: React.FC = () => {
   return (
-    <div className="bg-gradient-to-t from-pink-400 to-purple-300">
+    <div
+      style={{
+        backgroundImage: `linear-gradient(19deg, #faaca8 0%, #ddd6f3 100%)`,
+      }}
+    >
       <Loader />
       <Canvas
         shadows
