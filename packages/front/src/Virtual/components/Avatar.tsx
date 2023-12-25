@@ -189,7 +189,7 @@ export const Avatar: React.FC = () => {
     setLipSync(lipSync)
     const audio = new Audio('data:audio/mp3;base64,' + message.audio)
     audio.addEventListener('ended', () =>
-      setTimeout(() => setMessage(null), 500)
+      setTimeout(() => setMessage(null), 1000)
     )
     audio.play()
     setAudio(audio)

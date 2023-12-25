@@ -27,7 +27,7 @@ export const initMessages = (userId: string, hr = AI): ChatMessage => {
       {
         role: 'system',
         content: `
-      HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=React技術力チェック; Process=HR質問→User回答→HR追加質問; Repeat=技術力確認まで繰り返し; user称呼=${userId}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required; 質問は簡潔に`,
+      HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=React技術力チェック; Process=HR質問→User回答→HR追加質問; Repeat=技術力確認まで繰り返し; user称呼=${userId}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required; 質問と回答は50字以内`,
       },
       {
         role: 'assistant',
@@ -55,6 +55,18 @@ const genMessages = (transcript: string): Message[] => {
   return [...messages, newMessage]
 }
 
+function safeJsonParse(str: string) {
+  try {
+    return JSON.parse(str)
+  } catch (e) {
+    return {
+      text: str,
+      facialExpression: 'default',
+      animation: 'Idle',
+    }
+  }
+}
+
 export async function chat({
   openai,
   transcript,
@@ -71,10 +83,17 @@ export async function chat({
     messages: genMessages(transcript),
   })
   console.log(completion.choices[0].message)
-  const jsonParsed = JSON.parse(completion.choices[0].message.content || '')
+  const content = completion.choices[0].message.content
+  if (!content) throw Error('No content')
+  const jsonParsed = safeJsonParse(content)
   const zodParsed = messageSchema.safeParse(jsonParsed)
-  if (!zodParsed.success) {
-    throw new Error(`Invalid message: ${JSON.stringify(zodParsed.error)}`)
-  }
+  if (!zodParsed.success)
+    throw Error(`Invalid message: ${JSON.stringify(zodParsed.error)}`)
+
+  messages.push({
+    role: 'assistant',
+    content,
+  } satisfies Message)
+
   return { ...zodParsed.data, time: Date.now(), userId: hr }
 }

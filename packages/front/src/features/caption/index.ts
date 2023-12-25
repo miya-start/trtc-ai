@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Socket } from 'socket.io-client'
 import { type MessageToSend } from '../../types'
 
-export const DELETION_INTERVAL = 10000
+export const DELETION_INTERVAL = 20000
 
 export function insertCaption(
   prevs: MessageToSend[],
