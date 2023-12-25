@@ -193,13 +193,7 @@ export const Avatar: React.FC = () => {
       popCaption({ setCaptionTexts, userId: message.userId })
     }
 
-    const {
-      animation,
-      facialExpression,
-      lipSync,
-      text: transcript,
-      userId,
-    } = message
+    const { lipSync, text: transcript, userId } = message
     setAnimation(animation)
     setFacialExpression(facialExpression)
     setLipSync(lipSync)

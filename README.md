@@ -1,4 +1,4 @@
-# Custom Video Chat with React and TRTC SDK
+Custom Video Chat with 3D avator, using Tencent Real-Time Communication and Open AI
 
 ## How to start
 
@@ -21,16 +21,20 @@ VITE_SDKAPPID=XXXX
 VITE_SECRETKEY=XXXX
 ```
 
-In the server, rename the `sample.env` to `.env` and add your credentials of the API Key in Tencent Cloud.
+In the server, rename the `sample.env` to `.env` and add your credentials of the API Key in Open AI.
 
-**.env**
+**.env.local**
 
 ```.env
-TENCENT_SECRET_ID=XXXX
-TENCENT_SECRET_KEY=XXXX
+#!/bin/bash
+OPENAI_API_KEY=XXXX
 ```
 
-### 3. Install and run the app
+### 4. Install Rhubarb Lip Sync
+
+In the server, install [Rhubarb Lip Sync](https://github.com/DanielSWolf/rhubarb-lip-sync) and add the symbolic link path to `bin/rhubarb`.
+
+### 5. Install and run the app
 
 For the development, on both the front and server side:
 
@@ -49,4 +53,4 @@ $ npm run build
 
 I wrote an article about this application in Japanese.
 
-- [ビデオ通話に、リアルタイムで翻訳字幕をつけてみた](https://qiita.com/miya-start/items/cf64254276cb05f7d009)
+- [GPT-4 と Whisper を使って、AI の面接サービスを作ってみた](https://qiita.com/miya-start/items/a495887abaa6bead2b82)

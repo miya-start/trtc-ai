@@ -4,8 +4,6 @@ import z from 'zod'
 const AI = '面接AI'
 
 const messageSchema = z.object({
-  animation: z.enum(['Idle', 'Thinking', 'Waving']),
-  facialExpression: z.enum(['angry', 'sad', 'smile', 'surprised', 'default']),
   text: z.string(),
 })
 export type ChatMessage = z.infer<typeof messageSchema> & {
@@ -27,19 +25,17 @@ export const initMessages = (userId: string, hr = AI): ChatMessage => {
       {
         role: 'system',
         content: `
-      HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=Reactの技術力チェック; Process=HR質問50字以内→User回答→HR追加質問50字以内; Repeat=技術力の確認まで繰り返し; user称呼=${userId}さん;Assistant応答=JSON; JSON-Attribution=text, facialExpression, animation; facialExpression=smile, surprised, sad, angry, default; animation=Idle, Thinking, Waving; AllAttributions required; 応答は50字以内！`,
+      HR_Intvw-EngMid; user=候補者; assistant=${hr}; Focus=Reactの技術力チェック; Process=HR質問50字以内→User回答→HR追加質問50字以内; Repeat=技術力の確認まで繰り返し; user称呼=${userId}さん;Assistant応答=50字以内`,
       },
       {
         role: 'assistant',
-        content: `{${initialTranscript},"facialExpression":"smile","animation":"Idle"}`,
+        content: initialTranscript,
       },
     ] satisfies Message[])
   )
 
   return {
     text: initialTranscript,
-    animation: 'Idle',
-    facialExpression: 'smile',
     time: Date.now(),
     userId: hr,
   }
@@ -79,7 +75,7 @@ export async function chat({
   const completion = await openai.chat.completions.create({
     model: 'gpt-3.5-turbo',
     max_tokens: 1000,
-    temperature: 0.6,
+    temperature: 0.1,
     messages: genMessages(transcript),
   })
   console.log(completion.choices[0].message)

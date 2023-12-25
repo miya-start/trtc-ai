@@ -36,7 +36,7 @@ export const Setting: React.FC<{
             type="text"
             id="userId"
             className="border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-            placeholder='e.g. "John"'
+            placeholder="例) 太郎"
             value={userId}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setUserId(e.target.value)

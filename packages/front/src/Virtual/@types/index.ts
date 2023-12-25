@@ -21,9 +21,7 @@ const lipSyncSchema = z.object({
 export type LipSync = z.infer<typeof lipSyncSchema>
 
 export const messageSchema = z.object({
-  animation: z.enum(['Idle', 'Thinking', 'Waving']),
   audio: z.string(),
-  facialExpression: z.enum(['angry', 'sad', 'smile', 'surprised', 'default']),
   lipSync: lipSyncSchema,
   time: z.number(),
   text: z.string(),
